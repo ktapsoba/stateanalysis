@@ -2,8 +2,6 @@ package analysis;
 
 import resource.Method;
 import resource.State;
-import resource.Transition;
-import soot.Local;
 import soot.Value;
 import soot.jimple.AssignStmt;
 import soot.jimple.GotoStmt;
@@ -70,36 +68,19 @@ public class Visitor {
 		Value lhs = stmt.getLeftOp();
 		Value rhs = stmt.getRightOp();
 		
-		if (input.containsLocal(rhs.toString())) {
-			output.put((Local)lhs, input.get((Local)rhs));
-		}
-		else if (stmt.containsInvokeExpr()){
-			Method method = getMethod(stmt.getInvokeExpr());
-			//Object obj = stmt.getInvokeExpr().getUseBoxes().get(0);
-			
-			output = Transition.getInstance().getNewState(output, method, (Local)lhs);
-			/*if (obj instanceof JimpleLocalBox){
-				JimpleLocalBox objJ = (JimpleLocalBox)obj;
-				Value val = objJ.getValue();
-				output = Transition.getInstance().getNewState(output, method, (Local)lhs);
-			} else {
-				output = Transition.getInstance().getNewState(output, method, (Local)lhs);
-			}*/
-		}
+		
 
 	}
 	
 	private void visit(InvokeStmt stmt){
 		Value local = stmt.getUseBoxes().get(0).getValue();
 		Method method = getMethod(stmt.getInvokeExpr());
-	//	G.v().out.println("loca " + local.toString() + "---> " +stmt.toString());
-		output = Transition.getInstance().getNewState(output, method, (Local)local);
 	}
 	
 	private Method getMethod(InvokeExpr invokeExpr){
 		String methodName = invokeExpr.getMethod().getName();
 		String methodClass = invokeExpr.getMethodRef().declaringClass().getShortName();
-		return Method.getMethodByName(methodClass + "." + methodName);
+		return new Method(methodClass , methodName);
 	}
 	
 	private void visit(IfStmt stmt){
