@@ -2,17 +2,29 @@ package resource;
 
 public class Transition {
 	
-	private final State inState;
-	private final State outState;
-	private final Method method;
+	private final State fromState;
+	private final State toState;
+	private final Action action;
 	
-	public Transition(State inState, State outState, Method method){
-		this.inState = inState;
-		this.outState = outState;
-		this.method = method;
+	public Transition(State fromState, State toState, Action action){
+		this.fromState = fromState;
+		this.toState = toState;
+		this.action = action;
 	}
 	
 	public State getOutState(){
-		return outState;
+		return toState;
 	}
+
+	@Override
+	public boolean equals(Object object) {
+		if (object instanceof Transition){
+			Transition transition = (Transition)object;
+			return transition.fromState.equals(fromState) && transition.toState.equals(toState) && transition.action.equals(action);
+		}
+		return false;
+	}
+	
+	
+	
 }

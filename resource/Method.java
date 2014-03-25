@@ -10,4 +10,15 @@ public class Method {
 	}
 	
 	public String toString() { return this.className + "." + this.name; }
+
+	@Override
+	public boolean equals(Object object) {
+		if (object instanceof Method){
+			Method method = (Method)object;
+			return method.className.equals(className) && method.name.equals(name);
+		}
+		return false;
+	}
+	
+	
 }
