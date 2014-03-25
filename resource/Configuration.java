@@ -1,12 +1,9 @@
 package resource;
 
-import java.awt.datatransfer.StringSelection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import polyglot.util.StringUtil;
 
 public class Configuration {
 	private Map<String, State> statesByName;
@@ -56,6 +53,9 @@ public class Configuration {
 		return true;
 	}
 	
+	/*
+	 * Getters
+	 */
 	public Method getMethod(String className, String name){
 		return methodsByName.get(className + name);
 	}
@@ -74,6 +74,9 @@ public class Configuration {
 		return states;
 	}
 	
+	/*
+	 * Checking Transition
+	 */
 	public boolean checkTransition(State inState, State outState, Action action){
 		Transition transition = new Transition(inState, outState, action);
 		return transitions.contains(transition);
