@@ -13,9 +13,18 @@ public class State  {
 		actions = new ArrayList<>();
 	}
 	
+	public State(String name){
+		this.name = name;
+		actions = new ArrayList<>();
+	}
+	
 	public State(String name, List<Action> actions){
 		this.name = name;
 		this.actions = actions;
+	}
+	
+	public void addAction(Action action){
+		actions.add(action);
 	}
 	
 	public String toString(){

@@ -37,12 +37,38 @@ public class Configuration {
 		return true;
 	}
 	
+	public boolean AddNewState(String name){
+		if (name == null || name.isEmpty())
+			return false;
+		State state = new State(name);
+		statesByName.put(name, state);
+		return true;
+	}
+	
+	public boolean AddActionToState(String stateName, Action action){
+		if (stateName == null || stateName.isEmpty() || action == null)
+			return false;
+		if (statesByName.containsKey(stateName)){
+			State state = statesByName.get(stateName);
+			state.addAction(action);
+			statesByName.put(stateName, state);
+			return true;
+		}
+		return false;
+	}
+	
 	public boolean AddNewState(String name, List<Action> actions){
 		if(name == null || name.isEmpty())
 			return false;
 		State state = new State(name, actions);
 		statesByName.put(name, state);
 		return true;
+	}
+	
+	public boolean AddNewTransition(String inStateName, String outStateName, Action action){
+		if(inStateName == null || outStateName == null || action == null || inStateName.isEmpty() || outStateName.isEmpty())
+			return false;
+		return AddNewTransition(statesByName.get(inStateName), statesByName.get(outStateName), action);
 	}
 	
 	public boolean AddNewTransition(State inState, State outState, Action action){
@@ -72,6 +98,19 @@ public class Configuration {
 			}
 		}
 		return states;
+	}
+	
+	/*private Map<String, State> statesByName;
+	private Map<Method, Action> actionsByMethod;
+	private List<Transition> transitions;
+	private Map<String, Method> methodsByName;*/
+	public String Stats(){
+		String ret = "COUNTS";
+		ret += "\nMethods: " + methodsByName.size();
+		ret += "\nActions: " + actionsByMethod.size();
+		ret += "\nStates: " + statesByName.size();
+		ret += "\nTransitions: " + transitions.size();
+		return ret;
 	}
 	
 	/*
