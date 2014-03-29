@@ -90,7 +90,14 @@ public class Configuration {
 		return actionsByMethod.get(method);
 	}
 	
-	public List<State> getStates(Action action){
+	public State getTopState(){
+		return State.getTop();
+	}
+	public State getBottomState(){
+		return State.getBottom();
+	}
+	
+	public List<State> getStatesByAction(Action action){
 		List<State> states = new ArrayList<>();
 		for(String key : statesByName.keySet()){
 			if(statesByName.get(key).containsAction(action)){
@@ -99,11 +106,7 @@ public class Configuration {
 		}
 		return states;
 	}
-	
-	/*private Map<String, State> statesByName;
-	private Map<Method, Action> actionsByMethod;
-	private List<Transition> transitions;
-	private Map<String, Method> methodsByName;*/
+
 	public String Stats(){
 		String ret = "COUNTS";
 		ret += "\nMethods: " + methodsByName.size();
@@ -117,6 +120,9 @@ public class Configuration {
 	 * Checking Transition
 	 */
 	public boolean checkTransition(State inState, State outState, Action action){
+		if (inState.equals(outState)){
+			return true;
+		}
 		Transition transition = new Transition(inState, outState, action);
 		return transitions.contains(transition);
 	}

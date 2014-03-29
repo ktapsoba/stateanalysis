@@ -21,7 +21,8 @@ public class Analysis {
 
 			protected void internalTransform(Body body, String phase, Map options) {
 				UnitGraph unitGraph = new ExceptionalUnitGraph(body);
-				new ConstantPropagation(unitGraph);
+				//new ConstantPropagation(unitGraph);
+				new CPAnalysis(unitGraph);
 			}
 
 		}));
