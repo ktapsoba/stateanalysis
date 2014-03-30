@@ -106,6 +106,25 @@ public class Configuration {
 		}
 		return states;
 	}
+	
+	public List<ContextualState> getContextualStatesByActioin(Context ctx, Action action){
+		List<ContextualState> ctxState = new ArrayList<>();
+		List<State> states = getStatesByAction(action);
+		for(State state : states){
+			ctxState.add(new ContextualState(ctx, state));
+		}
+		return ctxState;
+	}
+	
+	public List<ContextualState> getContextualStatesByAction(Action action){
+		List<ContextualState> ctxState = new ArrayList<>();
+		List<State> states = getStatesByAction(action);
+		Context ctx = Context.getNewContext();
+		for(State state : states){
+			ctxState.add(new ContextualState(ctx, state));
+		}
+		return ctxState;
+	}
 
 	public String Stats(){
 		String ret = "COUNTS";
@@ -123,7 +142,18 @@ public class Configuration {
 		if (inState.equals(outState)){
 			return true;
 		}
+		//anything going from bottom to something else is valid
+		else if (inState.equals(getBottomState())){
+			return true;
+		}
 		Transition transition = new Transition(inState, outState, action);
 		return transitions.contains(transition);
+	}
+	
+	public boolean checkTransition(ContextualState inState, ContextualState outState, Action action){
+		if (inState.getContext().equals(outState.getContext())){
+			return checkTransition(inState.getState(), outState.getState(), action);
+		}
+		return false;
 	}
 }

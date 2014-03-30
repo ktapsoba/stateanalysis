@@ -1,11 +1,14 @@
 package analysis;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import resource.Action;
 import resource.Configuration;
+import resource.Context;
+import resource.ContextualState;
 import resource.Method;
 import resource.State;
 import soot.G;
@@ -23,24 +26,24 @@ import soot.jimple.Stmt;
 import soot.jimple.TableSwitchStmt;
 import soot.jimple.internal.JimpleLocalBox;
 
-public class Visitor {
-	Map<Local,State> input;
-	Map<Local,State> output;
+public class ContextualVisitor {
+	Map<Local, ContextualState> input;
+	Map<Local, ContextualState> output;
 	List<State> statesIn;
 	List<State> statesOut;
 	Configuration config;
 	private Map<Stmt, Method> methodByStmt = new HashMap<>();
 	
-	private static Visitor visitor = new Visitor();
-	public static Visitor getInstance() { return visitor; }
+	private static ContextualVisitor visitor = new ContextualVisitor();
+	public static ContextualVisitor getInstance() { return visitor; }
 	
 	public Map<Stmt, Method> getMethodByStmt(){
 		return methodByStmt;
 	}
 	
-	private Visitor(){ }
+	private ContextualVisitor(){ }
 	
-	public void visit(Stmt stmt, Map<Local,State> input, Map<Local,State> output, Configuration config){
+	public void visit(Stmt stmt, Map<Local,ContextualState> input, Map<Local,ContextualState> output, Configuration config){
 		this.input = input;
 		this.output = output;
 		this.config = config;
@@ -94,39 +97,31 @@ public class Visitor {
 		Value rhs = stmt.getRightOp();
 		
 		if (input.containsKey(rhs)){
-			State outState = input.get((Local)rhs);
-			State inState = config.getBottomState();
-			if (input.containsKey(lhs)){
-				inState = input.get((Local)lhs);
-			}
-			if (config.checkTransition(inState, outState, null)){
-				output.put((Local)lhs, input.get((Local)rhs));
-			}
-			else {
-				G.v().out.println("ERRRRRRRRRRRRRRRRRRRRRR at transition ASS in ou null " + stmt.toString());
-			}
-			
+			output.put((Local)lhs, input.get((Local)rhs));
 		}
-		else if (stmt.containsInvokeExpr()) {
+		else if (stmt.containsInvokeExpr()){
 			Method method = getMethod(stmt.getInvokeExpr());
+			String methodName = stmt.getInvokeExpr().getMethod().getName();
+			if (methodName.equals("executeQuery")){ G.v().out.println("got the method " + method);}
 			if (method != null){
 				methodByStmt.put(stmt, method);
 				Action action = config.getAction(method);
-				List<State> newStates = config.getStatesByAction(action);
+				if (methodName.equals("executeQuery")){ G.v().out.println("got the action " + action.toString());}
+				List<ContextualState> newStates = new ArrayList<>();
 				Object object = stmt.getInvokeExpr().getUseBoxes().get(0);
-				State inState = config.getBottomState();
 				if(object instanceof JimpleLocalBox){
 					JimpleLocalBox jlBox = (JimpleLocalBox)object;
 					Local local = (Local)jlBox.getValue();
 					if (input.containsKey(local)){
-						inState = input.get(local);
+						Context ctx = input.get(local).getContext();
+						newStates = config.getContextualStatesByActioin(ctx, action);
 					}
-				}				
-				if (config.checkTransition(inState, newStates.get(0), action)){
-					output.put((Local)lhs, newStates.get(0));
-				} else {
-					G.v().out.println("ERRRRRRRRRRRRRRRRRR ass " + stmt.toString());
+				}else {
+					newStates = config.getContextualStatesByAction(action);
 				}
+				
+				if (methodName.equals("executeQuery")){ G.v().out.println("got the states " + newStates.toString());}
+				output.put((Local)lhs, newStates.get(0));
 			}
 		}
 	}
@@ -138,23 +133,22 @@ public class Visitor {
 		if (method != null){
 			methodByStmt.put(stmt, method);
 			Action action = config.getAction(method);
-			List<State> newStates = config.getStatesByAction(action);
-			State inState = config.getBottomState();
-			if(input.containsKey((Local)value)){
-				inState = input.get((Local)value);
+			List<ContextualState> newStates;
+			if(input.containsKey(value)){
+				Context ctx = input.get((Local)value).getContext();
+				newStates = config.getContextualStatesByActioin(ctx, action);
 			}
-			if (config.checkTransition(inState, newStates.get(0), action)){
-				output.put((Local)value, newStates.get(0));
+			else {
+				newStates = config.getContextualStatesByAction(action);
 			}
-			else{
-				G.v().out.println("ERRRRRRRRRRRRRRRRRRRRRRRRRRRRR in transition");
-			}
+			output.put((Local)value, newStates.get(0));
 		}
 	}
 	
 	private Method getMethod(InvokeExpr invokeExpr){
 		String methodName = invokeExpr.getMethod().getName();
 		String methodClass = invokeExpr.getMethodRef().declaringClass().getShortName();
+		if (methodName.equals("executeQuery")){ G.v().out.println("about to get the method");}
 		return config.getMethod(methodClass, methodName);
 	}
 	

@@ -21,67 +21,19 @@ public class CPAnalysis extends ForwardFlowAnalysis<Unit, List<State>>{
 	private Map<Unit, List<State>> statesOutByUnit;
 	private UnitGraph unitGraph;
 	private List<Unit> unitAnalyzed = new ArrayList<>();
-	private Configuration config = new Configuration();
+	private Configuration config;
 	
-	public CPAnalysis(DirectedGraph<Unit> graph) {
+	public CPAnalysis(DirectedGraph<Unit> graph, Configuration config) {
 		super(graph);
 		this.graph = graph;
 		this.unitGraph = (UnitGraph)this.graph;
 		statesInByUnit = new HashMap<>();
 		statesOutByUnit = new HashMap<>();
 		
-		setConfigurations();
+		this.config = config;
+		
 		doAnalysis();
 		printResults();
-	}
-	
-	public void setConfigurations(){
-		// Set up Methods
-		config.AddNewMethod("DriverManager", "getConnection");
-		config.AddNewMethod("Connection", "createStatement");
-		config.AddNewMethod("Statement", "executeQuery");
-		config.AddNewMethod("ResultSet", "close");
-		config.AddNewMethod("Statement", "close");
-		config.AddNewMethod("Connection", "close");
-		
-		// Set up Actions
-		config.AddNewAction(config.getMethod("DriverManager", "getConnection"));
-		config.AddNewAction(config.getMethod("Connection", "createStatement"));
-		config.AddNewAction(config.getMethod("Statement", "executeQuery"));
-		config.AddNewAction(config.getMethod("ResultSet", "close"));
-		config.AddNewAction(config.getMethod("Statement", "close"));
-		config.AddNewAction(config.getMethod("Connection", "close"));
-		
-		// Set up States
-		/**Connected**/
-		config.AddNewState("Connected");
-		config.AddActionToState("Connected", config.getAction(config.getMethod("DriverManager", "getConnection")));
-		
-		/**NotConnected**/
-		config.AddNewState("NotConnected");
-		config.AddActionToState("NotConnected", config.getAction(config.getMethod("ResultSet", "close")));
-		config.AddActionToState("NotConnected", config.getAction(config.getMethod("Statement", "close")));
-		config.AddActionToState("NotConnected", config.getAction(config.getMethod("Connection", "close")));
-		
-		/**Statement**/
-		config.AddNewState("Statement");
-		config.AddActionToState("Statement", config.getAction(config.getMethod("Connection", "createStatement")));
-		
-		/**Statement**/
-		config.AddNewState("Result");
-		config.AddActionToState("Result", config.getAction(config.getMethod("Statement", "executeQuery")));
-		
-		// Set up Transitions
-		config.AddNewTransition("NotConnected", "Connected", config.getAction(config.getMethod("DriverManager", "getConnection")));
-		config.AddNewTransition("NotConnected", "NotConnected", config.getAction(config.getMethod("Connection", "close")));
-		config.AddNewTransition("NotConnected", "NotConnected", config.getAction(config.getMethod("ResultSet", "close")));
-		config.AddNewTransition("NotConnected", "NotConnected", config.getAction(config.getMethod("Statement", "close")));
-		config.AddNewTransition("Connected", "NotConnected", config.getAction(config.getMethod("Connection", "close")));
-		config.AddNewTransition("Connected", "Statement", config.getAction(config.getMethod("Connection", "createStatement")));
-		config.AddNewTransition("Statement", "Result", config.getAction(config.getMethod("Statement", "executeQuery")));
-		config.AddNewTransition("Statement", "NotConnected", config.getAction(config.getMethod("Statement", "close")));
-		config.AddNewTransition("Statement", "Statement", config.getAction(config.getMethod("Connection", "createStatement")));
-		config.AddNewTransition("Result", "NotConnected", config.getAction(config.getMethod("ResultSet", "close")));
 	}
 
 	@Override

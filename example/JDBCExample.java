@@ -19,6 +19,7 @@ public class JDBCExample {
 		Statement one = null;
 		Connection conn = null;
 		Statement stmt = one;
+		Connection con2 = null;
 		System.out.println("Goodbye!");
 		
 		try{
@@ -29,10 +30,10 @@ public class JDBCExample {
 			System.out.println("Connecting to database...");
 			conn = DriverManager.getConnection(DB_URL,USER,PASS);
 			
-			conn.close();
+			//conn.close();
 			//STEP 4: Execute a query
 			System.out.println("Creating statement...");
-			
+			con2 = DriverManager.getConnection(DB_URL);
 			stmt = conn.createStatement();
 			
 			String sql;
