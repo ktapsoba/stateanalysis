@@ -10,6 +10,7 @@ import resource.Method;
 import resource.State;
 import soot.G;
 import soot.Local;
+import soot.Unit;
 import soot.Value;
 import soot.jimple.AssignStmt;
 import soot.jimple.GotoStmt;
@@ -19,9 +20,14 @@ import soot.jimple.InvokeExpr;
 import soot.jimple.InvokeStmt;
 import soot.jimple.LookupSwitchStmt;
 import soot.jimple.NopStmt;
+import soot.jimple.RetStmt;
+import soot.jimple.ReturnStmt;
+import soot.jimple.ReturnVoidStmt;
 import soot.jimple.Stmt;
 import soot.jimple.TableSwitchStmt;
 import soot.jimple.internal.JimpleLocalBox;
+import soot.toolkits.graph.DirectedGraph;
+import soot.util.Chain;
 
 public class Visitor {
 	Map<Local,State> input;
@@ -29,21 +35,24 @@ public class Visitor {
 	List<State> statesIn;
 	List<State> statesOut;
 	Configuration config;
-	private Map<Stmt, Method> methodByStmt = new HashMap<>();
+	InterProceduralCFG cfg;
+	Chain<Local> locals;
+	Map<Local, State> RET_State;
 	
-	private static Visitor visitor = new Visitor();
-	public static Visitor getInstance() { return visitor; }
+	private Map<Stmt, Method> methodByStmt = new HashMap<>();
 	
 	public Map<Stmt, Method> getMethodByStmt(){
 		return methodByStmt;
 	}
 	
-	private Visitor(){ }
+	public Visitor(){ }
 	
-	public void visit(Stmt stmt, Map<Local,State> input, Map<Local,State> output, Configuration config){
+	public void visit(Stmt stmt, Map<Local,State> input, Map<Local,State> output, Configuration config, InterProceduralCFG cfg, Chain<Local> locals){
 		this.input = input;
 		this.output = output;
 		this.config = config;
+		this.cfg = cfg;
+		this.locals = locals;
 		visit(stmt);
 	}
 	
@@ -55,6 +64,30 @@ public class Visitor {
 	}
 	
 	private void visit(Stmt stmt){
+		G.v().out.println("visit " + stmt.toString());
+		
+		if (cfg.isBranchStmt(stmt)){
+			List<Value> args = cfg.getArguments(stmt);
+			List<Local> parameters = cfg.getParameters(stmt);
+			Map<Local, State> newInput = getInputToPass(args, parameters);
+			G.v().out.println("*****************BRANCH START****************");
+			//G.v().out.println("args --> " + args);
+			//G.v().out.println("para --> " + parameters);
+			//G.v().out.println("new Input --> " + newInput);
+			DirectedGraph<Unit> newGraph = cfg.makeGraph(stmt);
+			Chain<Local> newLocals = cfg.getLocals(stmt);
+			
+			ConstantPropagation cp = new ConstantPropagation(newGraph, newInput, config, cfg, newLocals);
+			cp.StartAnalysis();
+			Map<Local, State> newOutput = cp.getReturnStates();
+			//G.v().out.println(" resuts " + newOutput);
+			Map<Local, State> nowOutput = getOutputFromCall(newOutput, args, parameters);
+			//G.v().out.println(" to add " + nowOutput);
+			for(Local  key : nowOutput.keySet()){
+				output.put(key, nowOutput.get(key));
+			}
+			G.v().out.println("*****************BRANCH DONE****************");
+		}
 		
 		if (stmt instanceof IdentityStmt){
 			visit((IdentityStmt) stmt);
@@ -80,27 +113,39 @@ public class Visitor {
 		else if (stmt instanceof NopStmt){
 			visit((NopStmt) stmt);
 		}
+		else if (stmt instanceof ReturnStmt){
+			visit((ReturnStmt)stmt);
+		}
+		else if (stmt instanceof RetStmt){
+			visit((RetStmt)stmt);
+		}
+		else if (stmt instanceof ReturnVoidStmt){
+			visit((ReturnVoidStmt)stmt);
+		}
 		else {
-			//G.v().out.println("Other stmt" + stmt.toString());
+			G.v().out.println("Other stmt" + stmt.toString());
 		}
 	}
 	
 	private void visit(IdentityStmt stmt){
-		//G.v().out.println("Identity --> " + stmt.toString());
+		//G.v().out.println("Identity --> " + stmt.toString() + " -------- " + (stmt.containsArrayRef()? stmt.getTags(): ""));
 	}
 	
 	private void visit(AssignStmt stmt){
 		Value lhs = stmt.getLeftOp();
 		Value rhs = stmt.getRightOp();
 		
-		if (input.containsKey(rhs)){
-			State outState = input.get((Local)rhs);
-			State inState = config.getBottomState();
-			if (input.containsKey(lhs)){
-				inState = input.get((Local)lhs);
-			}
+		if (input.containsKey(getLocal(rhs))){
+			Local rhsL = getLocal(rhs);
+			Local lhsL = getLocal(lhs);
+			State outState = input.get(rhsL);
+			State inState = input.containsKey(lhsL)? input.get(lhsL):config.getBottomState();
+			
+			//TransferFunction tf = new TransferFunction(inState, outState, null, (Local)lhs);
+			//State rs = tf.apply(stmt, config);
+			//output.put((Local)lhs, rs);
 			if (config.checkTransition(inState, outState, null)){
-				output.put((Local)lhs, input.get((Local)rhs));
+				output.put(lhsL, outState);
 			}
 			else {
 				G.v().out.println("ERRRRRRRRRRRRRRRRRRRRRR at transition ASS in ou null " + stmt.toString());
@@ -109,6 +154,7 @@ public class Visitor {
 		}
 		else if (stmt.containsInvokeExpr()) {
 			Method method = getMethod(stmt.getInvokeExpr());
+			
 			if (method != null){
 				methodByStmt.put(stmt, method);
 				Action action = config.getAction(method);
@@ -117,13 +163,17 @@ public class Visitor {
 				State inState = config.getBottomState();
 				if(object instanceof JimpleLocalBox){
 					JimpleLocalBox jlBox = (JimpleLocalBox)object;
-					Local local = (Local)jlBox.getValue();
+					Local local = getLocal(jlBox.getValue());
 					if (input.containsKey(local)){
 						inState = input.get(local);
 					}
-				}				
+				}	
+				//TransferFunction tf = new TransferFunction(inState, action, (Local)lhs);
+				//State rs = tf.apply(stmt, config);
+				//output.put((Local)lhs, rs);
 				if (config.checkTransition(inState, newStates.get(0), action)){
-					output.put((Local)lhs, newStates.get(0));
+					//G.v().out.println("Getting new state");
+					output.put(getLocal(lhs), newStates.get(0));
 				} else {
 					G.v().out.println("ERRRRRRRRRRRRRRRRRR ass " + stmt.toString());
 				}
@@ -132,19 +182,28 @@ public class Visitor {
 	}
 	
 	private void visit(InvokeStmt stmt){
-		Value value = stmt.getUseBoxes().get(0).getValue();
-		Method method = getMethod(stmt.getInvokeExpr());
 		
+		Value value = stmt.getUseBoxes().get(0).getValue();
+		Local local = getLocal(value);
+		Method method = getMethod(stmt.getInvokeExpr());
+		G.v().out.println("invoke " + value + " nan " + getLocal(value));
+
 		if (method != null){
 			methodByStmt.put(stmt, method);
 			Action action = config.getAction(method);
 			List<State> newStates = config.getStatesByAction(action);
 			State inState = config.getBottomState();
-			if(input.containsKey((Local)value)){
-				inState = input.get((Local)value);
+			if(input.containsKey(local)){
+				inState = input.get(local);
+				G.v().out.println("input has key " + value);
 			}
+			
+			//TransferFunction tf = new TransferFunction(inState, action, (Local)value);
+			//State rs = tf.apply(stmt, config);
+			//output.put((Local)value, rs);
+			
 			if (config.checkTransition(inState, newStates.get(0), action)){
-				output.put((Local)value, newStates.get(0));
+				output.put(local, newStates.get(0));
 			}
 			else{
 				G.v().out.println("ERRRRRRRRRRRRRRRRRRRRRRRRRRRRR in transition");
@@ -177,5 +236,68 @@ public class Visitor {
 	
 	private void visit(NopStmt stmt){
 		//G.v().out.println("NopStmt --> " + stmt.toString());
+	}
+	
+	private void visit(ReturnStmt stmt){
+		Value value = stmt.getOp();
+		G.v().out.println("return value -> " + value);
+	}
+	
+	private void visit(RetStmt stmt){
+		G.v().out.println("RET STtmt" + stmt.toString());
+	}
+	
+	private void visit(ReturnVoidStmt stmt){
+		G.v().out.println("Return Void Stmt" + stmt.toString());
+		RET_State = output;
+	}
+	
+	private Map<Local, State> getInputToPass(List<Value> arguments, List<Local> parameters){
+		Map<Local, State> newInput = new HashMap<>();
+		Map<String, Local> parametersName = new HashMap<>();
+		for(Local param : parameters){
+			parametersName.put(param.getName(), param);
+		}
+		for(Value arg : arguments){
+			Local argL = getLocal(arg);
+			if (input.containsKey(argL)){
+				newInput.put(parametersName.get(argL.getName()), input.get(argL));
+			}
+		}
+		return newInput;
+	}
+	
+	private Map<Local, State> getOutputFromCall(Map<Local, State> newOutput, List<Value> arguments, List<Local> parameters){
+		Map<Local, State> toAddorUpdate = new HashMap();
+		Map<String, Local> argumentsByName = new HashMap<>();
+		for(Value arg : arguments){
+			Local argL = getLocal(arg);
+			if(argL != null){
+				argumentsByName.put(argL.getName(), argL);
+			}
+		}
+		G.v().out.println("Agrs Map " + argumentsByName);
+		for(Local param : parameters){
+			if (newOutput.containsKey(param)){
+				G.v().out.println("yes it contains param " + param);
+				G.v().out.println("arg by name " + argumentsByName.get(param.getName()));
+				G.v().out.println("param state " + newOutput.get(param) );
+				toAddorUpdate.put(argumentsByName.get(param.getName()), newOutput.get(param));
+			}
+		}
+		return toAddorUpdate;
+	}
+	
+	private Local getLocal(Value value){
+		for(Local local : locals){
+			if (local.getName().equals(value.toString())){
+				return local;
+			}
+		}
+		return null;
+	}
+	
+	public Map<Local, State> getReturnStates(){
+		return RET_State;
 	}
 }

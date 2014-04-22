@@ -37,10 +37,10 @@ public class Configuration {
 		return true;
 	}
 	
-	public boolean AddNewState(String name){
+	public boolean AddNewState(String name, int level){
 		if (name == null || name.isEmpty())
 			return false;
-		State state = new State(name);
+		State state = new State(name, level);
 		statesByName.put(name, state);
 		return true;
 	}
@@ -57,10 +57,10 @@ public class Configuration {
 		return false;
 	}
 	
-	public boolean AddNewState(String name, List<Action> actions){
+	public boolean AddNewState(String name, int level, List<Action> actions){
 		if(name == null || name.isEmpty())
 			return false;
-		State state = new State(name, actions);
+		State state = new State(name, level, actions);
 		statesByName.put(name, state);
 		return true;
 	}
@@ -106,25 +106,6 @@ public class Configuration {
 		}
 		return states;
 	}
-	
-	public List<ContextualState> getContextualStatesByActioin(Context ctx, Action action){
-		List<ContextualState> ctxState = new ArrayList<>();
-		List<State> states = getStatesByAction(action);
-		for(State state : states){
-			ctxState.add(new ContextualState(ctx, state));
-		}
-		return ctxState;
-	}
-	
-	public List<ContextualState> getContextualStatesByAction(Action action){
-		List<ContextualState> ctxState = new ArrayList<>();
-		List<State> states = getStatesByAction(action);
-		Context ctx = Context.getNewContext();
-		for(State state : states){
-			ctxState.add(new ContextualState(ctx, state));
-		}
-		return ctxState;
-	}
 
 	public String Stats(){
 		String ret = "COUNTS";
@@ -150,10 +131,10 @@ public class Configuration {
 		return transitions.contains(transition);
 	}
 	
-	public boolean checkTransition(ContextualState inState, ContextualState outState, Action action){
+	/*public boolean checkTransition(ContextualState inState, ContextualState outState, Action action){
 		if (inState.getContext().equals(outState.getContext())){
 			return checkTransition(inState.getState(), outState.getState(), action);
 		}
 		return false;
-	}
+	}*/
 }
