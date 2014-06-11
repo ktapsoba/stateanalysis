@@ -6,10 +6,11 @@ import java.util.List;
 
 public class State  {
 	private final String name;
-	private final int level;
+	private final Integer level;
 	private final List<Action> actions;
 	private static final State  Top = new State("Top", Integer.MAX_VALUE);
 	private static final State Bottom = new State("Bottom", Integer.MIN_VALUE);
+	private static final State Null = new State("Null", null);
 	
 	public State(){
 		this.name = "No State";
@@ -17,7 +18,7 @@ public class State  {
 		level = -1;
 	}
 	
-	public State(String name, int level){
+	public State(String name, Integer level){
 		this.name = name;
 		actions = new ArrayList<>();
 		this.level = level;
@@ -43,6 +44,7 @@ public class State  {
 	
 	public static State getTop() { return Top; }
 	public static State getBottom() { return Bottom; }
+	public static State getNull() { return Null; }
 
 	@Override
 	public boolean equals(Object object) {
@@ -54,9 +56,22 @@ public class State  {
 	}
 	
 	public State lub(State state){
+		if (level == null){
+			return state;
+		}
+		if (state.level == null){
+			return this;
+		}
 		if(level < state.level)
 			return state;
 		else return this;
 	}
+
+	@Override
+	public int hashCode() {
+		return name.hashCode()* level;
+	}
+	
+	
 	
 }

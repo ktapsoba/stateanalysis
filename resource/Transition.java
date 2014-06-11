@@ -24,6 +24,11 @@ public class Transition {
 		}
 		return false;
 	}
+
+	@Override
+	public int hashCode() {
+		return fromState.hashCode() * toState.hashCode() * action.hashCode();
+	}
 	
 	
 	

@@ -6,6 +6,10 @@ public class Action {
 	public Action(Method method){
 		this.method = method;
 	}
+	
+	public String toString() {
+		return method.toString();
+	}
 
 	@Override
 	public boolean equals(Object object) {
@@ -14,6 +18,11 @@ public class Action {
 			return action.method.equals(method);
 		}
 		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return method.hashCode() * 1234;
 	}
 	
 	

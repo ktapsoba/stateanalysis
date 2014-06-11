@@ -32,19 +32,20 @@ public class ConstantPropagation extends ForwardFlowAnalysis<Unit, Map<Local, St
 	private final Chain<Local> locals;
 	private Unit RET_;
 	private Visitor visitor;
+	private List<String> errors = new ArrayList<>();
 	
 	public ConstantPropagation(DirectedGraph<Unit> graph, Map<Local, State> extremalValue, Configuration config, InterProceduralCFG cfg, Chain<Local> locals){
 		super(graph);
-		G.v().out.println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ");
 		this.graph = graph;
 		this.unitGraph = (UnitGraph)this.graph;
+	//	G.v().out.println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ " + unitGraph.getClass().getMethods().length);
 		stateByUnitIn = new HashMap<>();
 		stateByUnitOut = new HashMap<>();
 		this.config = config;
 		this.cfg = cfg;
 		this.extremalValue = extremalValue == null? new HashMap<Local,State>(): extremalValue;
 		this.locals = locals;
-		G.v().out.println("Locals --> " + this.locals.toString());
+		//G.v().out.println("Locals --> " + this.locals.toString());
 		visitor = new Visitor();
 	}
 	
@@ -54,6 +55,15 @@ public class ConstantPropagation extends ForwardFlowAnalysis<Unit, Map<Local, St
 	
 	public void StartAnalysis(){
 		doAnalysis();
+		if(errors.size() > 0){
+			G.v().out.println("Errors Found");
+			for(String error: errors){
+				G.v().out.println(error);
+			}
+		}
+		else {
+			G.v().out.println("No errors found in analysis using entry point " + unitGraph.getBody().getMethod().toString());
+		}
 		//printResults();
 	}
 	
@@ -72,13 +82,19 @@ public class ConstantPropagation extends ForwardFlowAnalysis<Unit, Map<Local, St
 		
 		unitAnalysed.add(unit);
 		saveStateByUnit(unit, input, stateByUnitIn);
-		G.v().out.println("INPUT " + input);
+		//G.v().out.println("INPUT " + input);
 		
 		copy(input, output);
-		Stmt stmt = (Stmt) unit;
-		visitor.visit(stmt, input, output, config, cfg, locals);
 		
-		G.v().out.println("OUTPUT " + output);
+		Stmt stmt = (Stmt) unit;
+		//G.v().out.println("stmt " + stmt.toString());
+		try{
+			visitor.visit(stmt, input, output, config, cfg, locals);
+		} catch(InvalidCallError error){
+			errors.add(error.toString());
+		}
+		
+		//G.v().out.println("OUTPUT " + output);
 		saveStateByUnit(unit, output, stateByUnitOut);
 	}
 

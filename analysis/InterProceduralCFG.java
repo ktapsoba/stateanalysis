@@ -30,34 +30,44 @@ import soot.util.Chain;
 
 public class InterProceduralCFG{
 
+	//being used
 	private final CallGraph callGraph;
 	private final Map<Method, Body> methodToBody = new HashMap<>();
 	
 	//retains only callers that are explicit call sites or Thread.start()
-		protected static class EdgeFilter extends Filter {		
-			protected EdgeFilter() {
-				super(new EdgePredicate() {
-					public boolean want(Edge e) {				
-						return e.kind().isExplicit() || e.kind().isThread();
-					}
-				});
-			}
+	protected static class EdgeFilter extends Filter {		
+		protected EdgeFilter() {
+			super(new EdgePredicate() {
+				public boolean want(Edge e) {				
+					return e.kind().isExplicit() || e.kind().isThread();
+				}
+			});
 		}
-	
+	}
+
+	// being used
 	public InterProceduralCFG() {
 		callGraph = Scene.v().getCallGraph();
+		Chain<SootClass> appClasses = Scene.v().getApplicationClasses();
 		
+		for(SootClass sootcl : appClasses){
+			G.v().out.println("Applications class " + sootcl.toString());
+		}
 		SootClass sootClass = Scene.v().getMainClass();
 		List<SootMethod> sootMethods = sootClass.getMethods();
+		
 		
 		for(SootMethod sootMethod : sootMethods){
 			if (sootMethod.hasActiveBody()){
 				Body body = sootMethod.getActiveBody();
 				Method method = toMethod(sootMethod);
 				methodToBody.put(method, body);
-				G.v().out.println("------>" + method.toString());
 			}
 		}
+	}
+	
+	public boolean isDeclarationStmt(Stmt stmt){
+		return false;
 	}
 	
 	public boolean isCallStmt(Stmt stmt){
@@ -79,9 +89,7 @@ public class InterProceduralCFG{
 	
 	public boolean isBranchStmt(Stmt stmt){
 		if (isCallStmt(stmt)){
-			G.v().out.println("is call Stmt");
 			Method method = getMethod(stmt.getInvokeExpr());
-			G.v().out.println("method " + method.toString());
 			return hasActiveBody(method);
 		}
 		return false;
@@ -118,7 +126,8 @@ public class InterProceduralCFG{
 	public Method toMethod(SootMethod sootMethod){
 		String methodClass = sootMethod.getDeclaringClass().getShortName();
 		String methodName = sootMethod.getName();
-		return new Method(methodClass, methodName);
+		Method method = new Method(methodClass, methodName);
+		return method;
 	}
 	
 	public Set<SootMethod> getCalleesOfCallAt(Unit unit) {
@@ -145,5 +154,9 @@ public class InterProceduralCFG{
 		String methodName = invokeExpr.getMethod().getName();
 		String methodClass = invokeExpr.getMethodRef().declaringClass().getShortName();
 		return new Method(methodClass, methodName);
+	}
+	
+	public Method getMethod(Stmt stmt){
+		return getMethod(stmt.getInvokeExpr());
 	}
 }

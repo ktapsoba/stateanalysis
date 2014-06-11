@@ -34,14 +34,14 @@ public class TransferFunction {
 		if (stmt instanceof AssignStmt){
 			return applyAssign(stmt, config);
 		}
-		throw new InvalidCallError("Cannot Evaluate Statement", inState, stmt, action);
+		throw new InvalidCallError(stmt, inState, action);
 	}
 	
 	private State applyInvoke(Stmt stmt, Configuration config){
 		List<State> newStates = config.getStatesByAction(action);
 		if(config.checkTransition(inState, newStates.get(0), action))
 			return newStates.get(0);
-		throw new InvalidCallError("Invalid method Call", inState, stmt, action);
+		throw new InvalidCallError(stmt, inState, action);
 	}
 	
 	private State applyAssign(Stmt stmt, Configuration config){
@@ -54,6 +54,6 @@ public class TransferFunction {
 			if(config.checkTransition(inState, newStates.get(0), action))
 				return newStates.get(0);
 		}
-		throw new InvalidCallError("Invalid method Call", inState, stmt, action);
+		throw new InvalidCallError(stmt, inState, action);
 	}
 }

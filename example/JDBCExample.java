@@ -15,6 +15,8 @@ public class JDBCExample {
 		// JDBC driver name and database URL
 		String JDBC_DRIVER = "com.mysql.jdbc.Driver";  
 		String DB_URL = "jdbc:mysql://localhost:3306/test";
+		String url = "jdbc:mysql://localhost:3306/db_project";
+		FTPExample ftpExample = new FTPExample();
 
 		//  Database credentials
 		String USER = "testUser";
@@ -32,18 +34,25 @@ public class JDBCExample {
 			//STEP 3: Open a connection
 			System.out.println("Connecting to database...");
 			conn = DriverManager.getConnection(DB_URL,USER,PASS);
-			conn.close();
+			//conn.close();
 			//conn.close();
 			//STEP 4: Execute a query
 			System.out.println("Creating statement...");
 			con2 = DriverManager.getConnection(DB_URL);
+			String sql = "SELECT * from country";
 			stmt = conn.createStatement();
-			con2.close();
+			conn = DriverManager.getConnection(url, "root", "root");
+			conn.close();
 			
-			String sql;
-			sql = "SELECT * from country";
-			ResultSet rs = stmt.executeQuery(sql);
+			ftpExample.printme(con2);
+			System.out.println("getting result");
 
+			
+			ResultSet rs = stmt.executeQuery(sql);
+			//CallableStatement callStmt = conn.prepareCall(sql);
+			//callStmt.setInt(1, 3);
+			//ResultSet rs = callStmt.executeQuery();
+			System.out.println("printing results");
 			//STEP 5: Extract data from result set
 			while(rs.next()){
 				
@@ -53,13 +62,17 @@ public class JDBCExample {
 				int population = rs.getInt("Population");
 
 		       printResults(code, name, population, con2);
+		       printResults(code, name, population, conn);
 			}
 			
 		    //STEP 6: Clean-up environment
-			
+			System.out.println("close conn");
+			System.out.println("close rs");
 		    rs.close();
+		    System.out.println("close stmt");
 		    stmt.close();
 		    conn.close();
+		    FTPExample ftp = new FTPExample();
 		    
 		}catch(SQLException se){
 		    //Handle errors for JDBC
@@ -100,8 +113,12 @@ public class JDBCExample {
 		System.out.print(", Name: " + name);
 		System.out.print(", Population: " + population);
 		System.out.println();
-		Statement stmt = con2.createStatement();
-		con2 = DriverManager.getConnection("");;
+		//Statement stmt = con2.createStatement();
+		//con2 = DriverManager.getConnection("");;
+	}
+	
+	public static Connection closeit(Connection con){
+		return con;
 	}
 	
 

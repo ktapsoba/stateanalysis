@@ -8,9 +8,8 @@ import soot.jimple.Stmt;
 public class InvalidCallError extends RuntimeException{
 	private static final long serialVersionUID = 1L;
 
-	InvalidCallError(String message, State inState, Stmt stmt, Action action){
-		super("**************ERROR " + message + " : " + stmt.toString()
-				+ "\n Current state:" + inState.toString()
-				+ "\n Action :" + action.toString());
+	InvalidCallError(Stmt stmt, State inState, Action action){
+		super("Invalid API method call at Statement " + stmt.toString() + " for the input state " + inState.toString()
+				+ " and action :" + action);
 	}
 }

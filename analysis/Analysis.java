@@ -138,6 +138,8 @@ public class Analysis extends BodyTransformer {
 		config.AddNewTransition("Statement", "Statement", config.getAction(config.getMethod("Connection", "createStatement")));
 		config.AddNewTransition("Result", "NotConnected", config.getAction(config.getMethod("ResultSet", "close")));
 		
+		/**Base State**/
+		config.setBaseState("NotConnected");
 	}
 	
 	private Configuration setupFTPConfig(Configuration config){

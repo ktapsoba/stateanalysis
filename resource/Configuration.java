@@ -10,6 +10,7 @@ public class Configuration {
 	private Map<Method, Action> actionsByMethod;
 	private List<Transition> transitions;
 	private Map<String, Method> methodsByName;
+	private State baseState;
 	
 	/*
 	 * Configure the File
@@ -19,6 +20,14 @@ public class Configuration {
 		actionsByMethod = new HashMap<>();
 		transitions = new ArrayList<>();
 		methodsByName = new HashMap<>();
+	}
+	
+	public void setBaseState(String stateName){
+		baseState = statesByName.get(stateName);
+	}
+	
+	public State getBaseState(){
+		return baseState;
 	}
 	
 	public boolean AddNewMethod(String className, String methodName){
@@ -96,6 +105,9 @@ public class Configuration {
 	public State getBottomState(){
 		return State.getBottom();
 	}
+	public State getNullState(){
+		return State.getNull();
+	}
 	
 	public List<State> getStatesByAction(Action action){
 		List<State> states = new ArrayList<>();
@@ -105,6 +117,16 @@ public class Configuration {
 			}
 		}
 		return states;
+	}
+	
+	/*
+	 * Contains
+	 */
+	public boolean containsMethod(Method method){
+		return methodsByName.containsKey(method.getClassName() + method.getName());
+	}
+	public boolean containsAction(Method method){
+		return actionsByMethod.containsKey(method);
 	}
 
 	public String Stats(){
@@ -120,8 +142,12 @@ public class Configuration {
 	 * Checking Transition
 	 */
 	public boolean checkTransition(State inState, State outState, Action action){
+
 		if (inState.equals(outState)){
 			return true;
+		}
+		else if (inState == getNullState() && action != null){
+			return false;
 		}
 		//anything going from bottom to something else is valid
 		else if (inState.equals(getBottomState())){

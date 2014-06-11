@@ -9,6 +9,13 @@ public class Method {
 		this.name = name;
 	}
 	
+	public String getClassName(){
+		return className;
+	}
+	public String getName(){
+		return name;
+	}
+	
 	public String toString() { return this.className + "." + this.name; }
 
 	@Override

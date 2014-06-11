@@ -1,5 +1,8 @@
 package example;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPListParseEngine;
@@ -32,5 +35,9 @@ public class FTPExample {
 		for(FTPFile file : files){
 			System.out.println(file.getName());
 		}
+	}
+	
+	public void printme(Connection con) throws SQLException{
+		con.close();
 	}
 }
