@@ -110,6 +110,8 @@ public class NewVisitor {
 		
 	}
 	
+	//check for assignment with NewExpr on the right hand side. 
+	// if newExpr, then get the type and check if class exists or not.
 	private void visit(AssignStmt stmt) throws InvalidCallError{
 		StringBuilder sb = new StringBuilder();
 		sb.append("Assign Stmt--> ");
