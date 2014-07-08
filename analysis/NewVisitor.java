@@ -16,7 +16,6 @@ import soot.jimple.DefinitionStmt;
 import soot.jimple.GotoStmt;
 import soot.jimple.IdentityStmt;
 import soot.jimple.IfStmt;
-import soot.jimple.InterfaceInvokeExpr;
 import soot.jimple.InvokeStmt;
 import soot.jimple.LookupSwitchStmt;
 import soot.jimple.NopStmt;
@@ -25,7 +24,6 @@ import soot.jimple.ReturnStmt;
 import soot.jimple.ReturnVoidStmt;
 import soot.jimple.Stmt;
 import soot.jimple.TableSwitchStmt;
-import soot.jimple.internal.AbstractDefinitionStmt;
 import soot.jimple.internal.JimpleLocalBox;
 import soot.util.Chain;
 
@@ -84,21 +82,6 @@ public class NewVisitor {
 			//throw new Exception("Cannot identiy Statement " + stmt);
 			G.v().out.println("cannot identify statement " + stmt);
 		}
-	}
-	
-	private void visit(AbstractDefinitionStmt stmt){
-		StringBuffer sb = new StringBuffer();
-		sb.append("AbstractDefinition Stmt -->");
-		sb.append(stmt);
-		
-		if(stmt.getRightOp() instanceof InterfaceInvokeExpr){
-			sb.append(" --->Branching" );
-		} else if (cfg.isCallStmt(stmt)){
-			sb.append(" --->Calling" );
-		} else {
-			sb.append(" --->Normal" );
-		}
-		G.v().out.println(sb.toString());
 	}
 	
 	private void visit(IdentityStmt stmt){

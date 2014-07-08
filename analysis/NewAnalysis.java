@@ -99,6 +99,7 @@ public class NewAnalysis extends BodyTransformer{
 		NewConfiguration.addActionToState("Result", NewConfiguration.getAction(NewConfiguration.getMethod("Statement", "executeQuery")));
 		
 		// Set up Transitions
+		NewConfiguration.addNewTransition("Bottom", "Connected", NewConfiguration.getAction(NewConfiguration.getMethod("DriverManager", "getConnection")));
 		NewConfiguration.addNewTransition("NotConnected", "Connected", NewConfiguration.getAction(NewConfiguration.getMethod("DriverManager", "getConnection")));
 		NewConfiguration.addNewTransition("NotConnected", "NotConnected", NewConfiguration.getAction(NewConfiguration.getMethod("Connection", "close")));
 		NewConfiguration.addNewTransition("NotConnected", "NotConnected", NewConfiguration.getAction(NewConfiguration.getMethod("ResultSet", "close")));

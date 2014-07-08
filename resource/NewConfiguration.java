@@ -44,6 +44,11 @@ public class NewConfiguration {
 	}
 	
 	public static void addNewState(String name, int level, List<Action> actions){
+		if(statesByName.isEmpty()){
+			statesByName.put("Top", State.getTop());
+			statesByName.put("Bottom", State.getBottom());
+			statesByName.put("Null", State.getNull());
+		}
 		if(name == null || name.isEmpty())
 			return;
 		State state = new State(name, level, actions);
@@ -113,9 +118,9 @@ public class NewConfiguration {
 		else if (inState == State.getNull() && action != null){
 			return false;
 		}
-		else if(inState == State.getBottom()){
+		/*else if(inState == State.getBottom()){
 			return true;
-		}
+		}*/
 		Transition transition = new Transition(inState, outState, action);
 		return transitions.contains(transition);
 	}
