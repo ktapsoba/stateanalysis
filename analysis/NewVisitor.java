@@ -12,12 +12,12 @@ import soot.G;
 import soot.Local;
 import soot.Value;
 import soot.jimple.AssignStmt;
-import soot.jimple.DefinitionStmt;
 import soot.jimple.GotoStmt;
 import soot.jimple.IdentityStmt;
 import soot.jimple.IfStmt;
 import soot.jimple.InvokeStmt;
 import soot.jimple.LookupSwitchStmt;
+import soot.jimple.NewExpr;
 import soot.jimple.NopStmt;
 import soot.jimple.RetStmt;
 import soot.jimple.ReturnStmt;
@@ -26,12 +26,14 @@ import soot.jimple.Stmt;
 import soot.jimple.TableSwitchStmt;
 import soot.jimple.internal.JimpleLocalBox;
 import soot.util.Chain;
+import soot.util.Heap;
 
 public class NewVisitor {
 	private Map<Local, Set<State>> input, output;
 	private NewConfiguration config;
 	InterProceduralCFG cfg;
 	Chain<Local> localVariables;
+	Heap heap;
 	
 
 	public NewVisitor(){}
@@ -142,12 +144,16 @@ public class NewVisitor {
 			}
 		} else {
 			sb.append(" --->normal");
-			Local rhs = getLocalVariable(stmt.getRightOp());
+			Value rightOperand = stmt.getRightOp();
+			Local rhs = getLocalVariable(rightOperand);
 			G.v().out.println("rhs:" + stmt.getRightOp());
-			if(stmt.getRightOp() instanceof DefinitionStmt){
-				G.v().out.println("declaration");
+			if(rightOperand instanceof NewExpr){
+				G.v().out.println("declaration " + rightOperand.getType());
+				if(cfg.isApplicationClass(rightOperand.getType().toString())){
+					G.v().out.println("put in heap");
+				}
 			}
-			if(input.containsKey(rhs)){
+			else if(input.containsKey(rhs)){
 				Local lhs = getLocalVariable(stmt.getLeftOp());
 				sb.append(":exists");
 				State inState = NewConfiguration.getHighestState(input.get(lhs));

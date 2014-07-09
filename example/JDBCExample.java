@@ -121,5 +121,8 @@ public class JDBCExample {
 		return con;
 	}
 	
+	public void oneMethod(int v){
+		System.out.println(v);
+	}
 
 }

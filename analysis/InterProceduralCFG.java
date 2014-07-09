@@ -2,6 +2,7 @@ package analysis;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -14,6 +15,7 @@ import soot.G;
 import soot.Local;
 import soot.Scene;
 import soot.SootClass;
+import soot.SootField;
 import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
@@ -33,6 +35,7 @@ public class InterProceduralCFG{
 	//being used
 	private final CallGraph callGraph;
 	private final Map<Method, Body> methodToBody = new HashMap<>();
+	private final Map<String, Set<SootField>>applicationClasses  = new HashMap<>();
 	
 	//retains only callers that are explicit call sites or Thread.start()
 	protected static class EdgeFilter extends Filter {		
@@ -51,7 +54,13 @@ public class InterProceduralCFG{
 		Chain<SootClass> appClasses = Scene.v().getApplicationClasses();
 		
 		for(SootClass sootcl : appClasses){
-			G.v().out.println("Applications class " + sootcl.toString());
+			G.v().out.println("Applications class " + sootcl.getName());
+			G.v().out.println("Application fields " + sootcl.getFields());
+			Set<SootField> fields = new HashSet<>();
+			for(SootField field : sootcl.getFields()){
+				fields.add(field);
+			}
+			applicationClasses.put(sootcl.getName(), fields);
 		}
 		SootClass sootClass = Scene.v().getMainClass();
 		List<SootMethod> sootMethods = sootClass.getMethods();
@@ -66,8 +75,8 @@ public class InterProceduralCFG{
 		}
 	}
 	
-	public boolean isDeclarationStmt(Stmt stmt){
-		return false;
+	public boolean isApplicationClass(String type){
+		return applicationClasses.containsKey(type);
 	}
 	
 	public boolean isCallStmt(Stmt stmt){
