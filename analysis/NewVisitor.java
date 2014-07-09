@@ -30,7 +30,7 @@ import soot.util.Heap;
 
 public class NewVisitor {
 	private Map<Local, Set<State>> input, output;
-	private NewConfiguration config;
+	//private NewConfiguration config;
 	InterProceduralCFG cfg;
 	Chain<Local> localVariables;
 	Heap heap;
