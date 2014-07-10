@@ -13,6 +13,8 @@ import resource.Method;
 import soot.Body;
 import soot.G;
 import soot.Local;
+import soot.PointsToAnalysis;
+import soot.PointsToSet;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootField;
@@ -36,6 +38,7 @@ public class InterProceduralCFG{
 	private final CallGraph callGraph;
 	private final Map<Method, Body> methodToBody = new HashMap<>();
 	private final Map<String, Set<SootField>>applicationClasses  = new HashMap<>();
+	private final PointsToAnalysis pointsToAnalysis;
 	
 	//retains only callers that are explicit call sites or Thread.start()
 	protected static class EdgeFilter extends Filter {		
@@ -52,6 +55,7 @@ public class InterProceduralCFG{
 	public InterProceduralCFG() {
 		callGraph = Scene.v().getCallGraph();
 		Chain<SootClass> appClasses = Scene.v().getApplicationClasses();
+		pointsToAnalysis = Scene.v().getPointsToAnalysis();
 		
 		for(SootClass sootcl : appClasses){
 			G.v().out.println("Applications class " + sootcl.getName());
@@ -72,6 +76,17 @@ public class InterProceduralCFG{
 				Method method = toMethod(sootMethod);
 				methodToBody.put(method, body);
 			}
+		}
+	}
+	
+	public void getPointedObject(Local local){
+		PointsToSet pointsToSet = pointsToAnalysis.reachingObjects(local);
+		G.v().out.println(local + " pointing to " + pointsToSet);
+		if(pointsToSet != null){
+			G.v().out.println("has no run-time objects " + pointsToSet.isEmpty());
+			G.v().out.println("has objects of java.lang.class " + pointsToSet.possibleClassConstants());
+			G.v().out.println("has string constants " + pointsToSet.possibleStringConstants());
+			G.v().out.println("possible types " + pointsToSet.possibleTypes());
 		}
 	}
 	

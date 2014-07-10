@@ -116,7 +116,6 @@ public class NewVisitor {
 					G.v().out.println(sb.toString());
 					Object object = stmt.getInvokeExpr().getUseBoxes().get(0);
 					sb.append("got Object " + object);
-					//G.v().out.println(sb.toString());
 					Local rhsL = null;
 					State inState = State.getBottom();
 					if(object instanceof JimpleLocalBox){

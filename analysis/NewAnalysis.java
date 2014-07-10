@@ -56,7 +56,7 @@ public class NewAnalysis extends BodyTransformer{
 			cfg = new InterProceduralCFG();
 		}
 		UnitGraph unitGraph = new ExceptionalUnitGraph(body);
-		//(new NewConstantPropagation(unitGraph, null, body.getLocals(), cfg)).startAnalysis();
+		(new NewConstantPropagation(unitGraph, null, body.getLocals(), cfg)).startAnalysis();
 	}
 	
 	private void setupNewConfigurations(){
