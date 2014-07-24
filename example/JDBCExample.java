@@ -41,8 +41,8 @@ public class JDBCExample {
 			con2 = DriverManager.getConnection(DB_URL);
 			String sql = "SELECT * from country";
 			stmt = conn.createStatement();
-			conn = DriverManager.getConnection(url, "root", "root");
-			conn.close();
+			//conn = DriverManager.getConnection(url, "root", "root");
+			//conn.close();
 			
 			ftpExample.printme(con2);
 			System.out.println("getting result");

@@ -112,10 +112,10 @@ public class NewConfiguration {
 	 * Checking Transition
 	 */
 	public static boolean checkTransition(State inState, State outState, Action action){
-		if(inState.equals(outState)){
+		/*if(inState.equals(outState)){
 			return true;
 		}
-		else if (inState == State.getNull() && action != null){
+		else*/ if (inState == State.getNull() && action != null){
 			return false;
 		}
 		/*else if(inState == State.getBottom()){

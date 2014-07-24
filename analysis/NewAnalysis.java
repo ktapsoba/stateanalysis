@@ -19,9 +19,9 @@ public class NewAnalysis extends BodyTransformer{
 	
 	public static void main(String[] args) {
 		String classPath = "example.JDBCExample";		
-		String mainClass = "analysis.NewAnalysis";
+		String mainClass = "analysis.NewAnalysis";		
 		
-		/*String[] sootArgs = {
+		String[] sootArgs = {
 				"-cp", classPath, "-pp", 
 				"-w", "-app", 
 				"-p", "cg", "enabled:false",
