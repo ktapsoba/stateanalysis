@@ -65,7 +65,7 @@ public class Analysis extends BodyTransformer {
 			cfg = new InterProceduralCFG();
 		}
 		UnitGraph unitGraph = new ExceptionalUnitGraph(body);
-		(new ConstantPropagation(unitGraph, null , config, cfg, body.getLocals())).StartAnalysis();
+		//(new ConstantPropagation(unitGraph, null , config, cfg, body.getLocals())).StartAnalysis();
 		
 	}
 	

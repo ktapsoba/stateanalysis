@@ -67,6 +67,7 @@ public class InterProceduralCFG{
 		
 		
 		for(SootMethod sootMethod : sootMethods){
+		    G.v().out.println("Method class " + sootMethod.toString());
 			if (sootMethod.hasActiveBody()){
 				Body body = sootMethod.getActiveBody();
 				Method method = toMethod(sootMethod);

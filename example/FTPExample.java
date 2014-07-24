@@ -3,13 +3,11 @@ package example;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
-import org.apache.commons.net.ftp.FTPListParseEngine;
 
 public class FTPExample {
 	
-	public static void main(String[] args){
+	/*public static void main(String[] args){
 		String server = "localhost";
 		String username = "username";
 		String password = "password";
@@ -29,7 +27,7 @@ public class FTPExample {
 		}catch (Exception e){
 			
 		}
-	}
+	}*/
 	
 	public static void printFiles(FTPFile[] files){
 		for(FTPFile file : files){
