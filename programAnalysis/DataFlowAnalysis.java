@@ -74,7 +74,7 @@ public class DataFlowAnalysis extends
 		G.v().out.println("INPUT--> " + input);
 		saveStateByUnit(unit, input, stateByUnitIn);
 		copy(input, output);
-		G.v().out.println("unit-->" + unit + "\n tags ->" + unit.getTags());
+		//G.v().out.println("unit-->" + unit);
 		Stmt stmt = (Stmt) unit;
 		try {
 			newVisitor.visit(stmt, input, output, cfg, localVariables, environment);

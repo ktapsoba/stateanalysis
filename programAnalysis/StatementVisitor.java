@@ -110,7 +110,7 @@ public class StatementVisitor {
 				if (Configuration.containsAction(method)) {
 					sb.append(" + Action");
 					
-					G.v().out.println(sb.toString());
+					
 					Object object = stmt.getInvokeExpr().getUseBoxes().get(0);
 					sb.append("got Object " + object);
 					// G.v().out.println(sb.toString());
@@ -125,7 +125,8 @@ public class StatementVisitor {
 					}
 					//get actions
 					List<Action> actions = Configuration.getActions(method);
-					
+					sb.append(" :" + actions);
+					//G.v().out.println(sb.toString());
 					//get inStates
 					List<State> inStates = input.containsKey(rhsL)? environment.getStates(stmt, rhsL) : Arrays.asList(State.getBottom());
 					

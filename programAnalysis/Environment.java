@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 
 import resource.State;
+import soot.G;
 import soot.Local;
 import soot.jimple.Stmt;
 
@@ -34,10 +35,21 @@ public class Environment {
 		Map<Local, Set<State>> entry = localStatesByStmt.containsKey(stmt)? localStatesByStmt.get(stmt) : new HashMap<Local, Set<State>>();
 		entry.put(local, outputStates);
 		localStatesByStmt.put(stmt, entry);
+		G.v().out.println(this);
 	}
 	
 	public void addSuccessor(Stmt stmt, Stmt successor) {
-		localStatesByStmt.put(successor, localStatesByStmt.get(stmt));
+		if(localStatesByStmt.containsKey(stmt))
+			localStatesByStmt.put(successor, localStatesByStmt.get(stmt));
+	}
+	
+	public String toString() {
+		String ret = "{";
+		for(Stmt stmt : localStatesByStmt.keySet()){
+			ret += stmt.toString() + " <<" + localStatesByStmt.get(stmt) + ">>, ";
+		}
+		ret += "}";
+		return ret;
 	}
 
 }

@@ -2,8 +2,10 @@ package programAnalysis;
 
 import java.util.Map;
 
+import resource.Method;
 import soot.Body;
 import soot.BodyTransformer;
+import soot.G;
 import soot.PackManager;
 import soot.Transform;
 import soot.toolkits.graph.ExceptionalUnitGraph;
@@ -19,7 +21,7 @@ public class Analysis extends BodyTransformer {
 
 	public static void main(String[] args) {
 		String classPath = "example.JDBCExample";
-		String mainClass = "analysis.NewAnalysis";
+		String mainClass = "programAnalysis.Analysis";
 
 		String[] sootArgs = { "-cp", classPath, "-pp", "-w", "-app", "-p",
 				"cg", "enabled:false",
@@ -57,7 +59,7 @@ public class Analysis extends BodyTransformer {
 
 	private void setupConfigurations() {
 		setupJDBCConfigurations();
-		setupJavaIOConfigurations();
+		//setupJavaIOConfigurations();
 	}
 
 	private void setupJDBCConfigurations() {
@@ -157,17 +159,17 @@ public class Analysis extends BodyTransformer {
         Configuration.addNewMethod("FileOutputStream", "close");
         
         // Set up Actions
-        Configuration.addNewAction("getConnection");
-        Configuration.addMethodToAction("getConnection", Configuration.getMethod("FileReader", "FileReader"));
-        Configuration.addMethodToAction("getConnection", Configuration.getMethod("FileInputStream", "FileInputStream"));
-        Configuration.addMethodToAction("getConnection", Configuration.getMethod("FileWriter", "FileWriter"));
-        Configuration.addMethodToAction("getConnection", Configuration.getMethod("FileOutputStream", "FileOutputStream"));
+        Configuration.addNewAction("openFile");
+        Configuration.addMethodToAction("openFile", Configuration.getMethod("FileReader", "FileReader"));
+        Configuration.addMethodToAction("openFile", Configuration.getMethod("FileInputStream", "FileInputStream"));
+        Configuration.addMethodToAction("openFile", Configuration.getMethod("FileWriter", "FileWriter"));
+        Configuration.addMethodToAction("openFile", Configuration.getMethod("FileOutputStream", "FileOutputStream"));
 
-        Configuration.addNewAction("closeConnection");
-        Configuration.addMethodToAction("closeConnection", Configuration.getMethod("FileReader", "close"));
-        Configuration.addMethodToAction("closeConnection", Configuration.getMethod("FileInputStream", "close"));
-        Configuration.addMethodToAction("closeConnection", Configuration.getMethod("FileWriter", "close"));
-        Configuration.addMethodToAction("closeConnection", Configuration.getMethod("FileOutputStream", "close"));
+        Configuration.addNewAction("closeFile");
+        Configuration.addMethodToAction("closeFile", Configuration.getMethod("FileReader", "close"));
+        Configuration.addMethodToAction("closeFile", Configuration.getMethod("FileInputStream", "close"));
+        Configuration.addMethodToAction("closeFile", Configuration.getMethod("FileWriter", "close"));
+        Configuration.addMethodToAction("closeFile", Configuration.getMethod("FileOutputStream", "close"));
 
         Configuration.addNewAction("getBuffer");
         Configuration.addMethodToAction("getBuffer", Configuration.getMethod("BuffferedReader", "BuffferedReader"));
@@ -187,12 +189,12 @@ public class Analysis extends BodyTransformer {
         
         // Set up States
         /**NotConnected**/
-        Configuration.addNewState("NotConnected");
-        Configuration.addActionToState("NotConnected", Configuration.getAction("closeConnection"));
+        Configuration.addNewState("Close");
+        Configuration.addActionToState("Close", Configuration.getAction("closeFile"));
         
         /**Connected**/
-        Configuration.addNewState("Connected");
-        Configuration.addActionToState("Connected", Configuration.getAction("getConnection"));
+        Configuration.addNewState("Open");
+        Configuration.addActionToState("Open", Configuration.getAction("openFile"));
         
         /**BufferOpen**/
         Configuration.addNewState("BufferOpen");
@@ -207,19 +209,19 @@ public class Analysis extends BodyTransformer {
         Configuration.addActionToState("ReadWrite", Configuration.getAction("readWriteFile"));
         
         // Set up Transitions
-        Configuration.addNewTransition("toConnected1", "NotConnected", "Connected","getConnection");
-        Configuration.addNewTransition("toConnected2", "Connected", "Connected", "getConnection");
+        Configuration.addNewTransition("toConnected1", "Close", "Open","openFile");
+        Configuration.addNewTransition("toConnected2", "Open", "Open", "openFile");
         
-        Configuration.addNewTransition("toNotConnected1", "Connected", "NotConnected", "closeConnection");
-        Configuration.addNewTransition("toNotConnected2", "NotConnected", "NotConnected", "closeConnection");
+        Configuration.addNewTransition("toNotConnected1", "Open", "Close", "closeFile");
+        Configuration.addNewTransition("toNotConnected2", "Close", "Close", "closeFile");
         
-        Configuration.addNewTransition("toBufferOpen1", "Connected", "BufferOpen", "getBuffer");
+        Configuration.addNewTransition("toBufferOpen1", "Open", "BufferOpen", "getBuffer");
         Configuration.addNewTransition("toBufferOpen2", "BufferOpen", "BufferOpen", "getBuffer");
 
         Configuration.addNewTransition("toBufferClosed1", "BufferOpen", "BufferClosed", "closeBuffer");
         Configuration.addNewTransition("toBufferClosed2", "BufferClosed", "BufferClosed", "closeBuffer");
 
-        Configuration.addNewTransition("toReadWrite1", "Connected", "ReadWrite", "readWriteFile");
+        Configuration.addNewTransition("toReadWrite1", "Open", "ReadWrite", "readWriteFile");
         Configuration.addNewTransition("toReadWrite2", "ReadWrite", "ReadWrite", "readWriteFile");
 	}
 

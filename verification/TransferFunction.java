@@ -24,7 +24,6 @@ public class TransferFunction {
 				outputStates.add(state);
 			}
 		}
-		G.v().out.println("Output States--> " + outputStates);
 		return outputStates;
 	}
 }
