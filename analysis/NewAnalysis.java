@@ -42,7 +42,7 @@ public class NewAnalysis extends BodyTransformer{
 		String[] myArgs = {
 				"-cp", classPath, "-pp", 
 				"-p", "cg", "implicit-entry:false",
-		};*/
+		};
 		
 		PackManager.v().getPack("jtp").add(new Transform("jtp.myTransform", new NewAnalysis()));
 		
