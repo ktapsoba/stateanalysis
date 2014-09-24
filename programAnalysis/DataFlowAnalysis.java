@@ -1,6 +1,5 @@
 package programAnalysis;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -25,7 +24,6 @@ public class DataFlowAnalysis extends
 	private final Map<Local, Set<State>> extremalValue;
 	private final Chain<Local> localVariables;
 	private StatementVisitor newVisitor = new StatementVisitor();
-	private List<String> errors = new ArrayList<>();
 	private Map<Unit, Map<Local, Set<State>>> stateByUnitIn;
 	private Map<Unit, Map<Local, Set<State>>> stateByUnitOut;
 	private Environment environment;
@@ -45,15 +43,16 @@ public class DataFlowAnalysis extends
 	}
 
 	public void startAnalysis() {
-		doAnalysis();
-		if (errors.size() > 0) {
-			G.v().out.println("Errors Found");
-			for (String error : errors) {
-				G.v().out.println(error);
-			}
-		} else {
+		try{
+			doAnalysis();
 			G.v().out.println("No errors found in analysis using entry point "
 					+ unitGraph.getBody().getMethod().toString());
+		} catch (InvalidAPICallException ex){
+			G.v().out.println("*****Errors Found!!!");
+			G.v().out.println(ex.toString());
+		} catch(Exception ex) {
+			G.v().out.println("Unexpected Exception found!!!!");
+			G.v().out.println(ex.getMessage());
 		}
 	}
 
@@ -69,22 +68,18 @@ public class DataFlowAnalysis extends
 
 	@Override
 	protected void flowThrough(Map<Local, Set<State>> input, Unit unit,
-			Map<Local, Set<State>> output) {
+			Map<Local, Set<State>> output) throws InvalidAPICallException{
 
 		G.v().out.println("INPUT--> " + input);
 		saveStateByUnit(unit, input, stateByUnitIn);
 		copy(input, output);
 		//G.v().out.println("unit-->" + unit);
 		Stmt stmt = (Stmt) unit;
-		try {
-			newVisitor.visit(stmt, input, output, cfg, localVariables, environment);
-			List<Unit> successors = unitGraph.getSuccsOf(unit);
-			for(Unit succ : successors){
-				Stmt succStmt = (Stmt) succ;
-				environment.addSuccessor(stmt, succStmt);
-			}
-		} catch (InvalidAPICallException error) {
-			errors.add(error.toString());
+		newVisitor.visit(stmt, input, output, cfg, localVariables, environment);
+		List<Unit> successors = unitGraph.getSuccsOf(unit);
+		for(Unit succ : successors){
+			Stmt succStmt = (Stmt) succ;
+			environment.addSuccessor(stmt, succStmt);
 		}
 		saveStateByUnit(unit, output, stateByUnitOut);
 		G.v().out.println("OUTPUT--> " + output);
