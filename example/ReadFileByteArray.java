@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 
 public class ReadFileByteArray {
@@ -16,8 +17,9 @@ public class ReadFileByteArray {
 	    try
 	    {
 	      //create FileInputStream object
-	      FileInputStream fin = new FileInputStream(file);
+	        FileInputStream fin = new FileInputStream(path);
 	     FileReader fr = new FileReader(path);
+	     FileWriter fw = new FileWriter(path);
 	      /*
 	       * Create byte array large enough to hold the content of the file.
 	       * Use File.length to determine size of the file in bytes.

@@ -1,5 +1,8 @@
 package example;
 //STEP 1. Import required packages
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -42,7 +45,7 @@ public class JDBCExample {
 			String sql = "SELECT * from country";
 			stmt = conn.createStatement();
 			//conn = DriverManager.getConnection(url, "root", "root");
-			//conn.close();
+			conn.close();
 			
 			ftpExample.printme(con2);
 			System.out.println("getting result");
@@ -73,6 +76,18 @@ public class JDBCExample {
 		    stmt.close();
 		    conn.close();
 		    FTPExample ftp = new FTPExample();
+		    
+		    File file = new File("C:/kenny.txt");
+		    FileReader reader = new FileReader(file);
+		    reader.close();
+		    BufferedReader buffer = new BufferedReader(reader);
+		    String line;
+		    while((line = buffer.readLine()) != null){
+		        System.out.println(line);
+		    }
+		    
+		    buffer.close();
+		    reader.close();
 		    
 		}catch(SQLException se){
 		    //Handle errors for JDBC

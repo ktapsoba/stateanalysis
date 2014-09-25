@@ -10,6 +10,7 @@ public class NewConfiguration {
 	private static Map<String, State> statesByName = new HashMap<>();
 	private static Map<Method, Action> actionsByMethod = new HashMap<>();
 	private static Map<String, Method> methodsByName = new HashMap<>();
+	private static Map<String, Action> actionByName = new HashMap<>();
 	private static Set<Transition> transitions = new HashSet<>();
 	
 	public static void addNewMethod(String className, String methodName){
@@ -17,6 +18,12 @@ public class NewConfiguration {
 			return;
 		Method method = new Method(className, methodName);
 		methodsByName.put(className + methodName, method);
+	}
+	
+	public static void addNewAction(String actionName){
+	    if(actionName.isEmpty())
+	        return;
+	    
 	}
 	
 	public static void addNewAction(Method method){
