@@ -44,8 +44,8 @@ public class JDBCExample {
 			String sql = "SELECT * from country";
 			stmt = conn.createStatement();
 			//conn = DriverManager.getConnection(url, "root", "root");
+			//conn = DriverManager.getConnection(DB_URL,USER,PASS);//.close();
 			conn.close();
-			
 			System.out.println("getting result");
 
 			

@@ -43,7 +43,7 @@ public class State {
 	public boolean equals(Object object) {
 		if (object instanceof State) {
 			State state = (State) object;
-			return state.name.equals(name) && actions.containsAll(actions);
+			return state.name.equals(name); //&& actions.containsAll(actions);
 		}
 		return false;
 	}

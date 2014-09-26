@@ -27,9 +27,10 @@ public class DataFlowAnalysis extends
 	private Map<Unit, Map<Local, Set<State>>> stateByUnitIn;
 	private Map<Unit, Map<Local, Set<State>>> stateByUnitOut;
 	private Environment environment;
+	private DependencyMap dependencyMap;
 
 	public DataFlowAnalysis(DirectedGraph<Unit> graph, Map<Local, Set<State>> extremalValue, Chain<Local> localVariables,
-			ControlFlowGraph cfg, Environment environment) {
+			ControlFlowGraph cfg, Environment environment, DependencyMap dependencyMap) {
 		super(graph);
 		this.graph = graph;
 		this.unitGraph = (UnitGraph) graph;
@@ -40,6 +41,7 @@ public class DataFlowAnalysis extends
 		this.stateByUnitIn = new HashMap<>();
 		this.stateByUnitOut = new HashMap<>();
 		this.environment = environment;
+		this.dependencyMap = dependencyMap;
 	}
 
 	public void startAnalysis() {
@@ -75,7 +77,7 @@ public class DataFlowAnalysis extends
 		copy(input, output);
 		//G.v().out.println("unit-->" + unit);
 		Stmt stmt = (Stmt) unit;
-		newVisitor.visit(stmt, input, output, cfg, localVariables, environment);
+		newVisitor.visit(stmt, input, output, cfg, localVariables, environment, dependencyMap);
 		List<Unit> successors = unitGraph.getSuccsOf(unit);
 		for(Unit succ : successors){
 			Stmt succStmt = (Stmt) succ;

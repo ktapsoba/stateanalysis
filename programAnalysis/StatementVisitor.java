@@ -40,18 +40,20 @@ public class StatementVisitor {
 	Chain<Local> localVariables;
 	Heap heap;
 	Environment environment;
+	DependencyMap dependencyMap;
 
 	public StatementVisitor() {
 	}
 
 	public void visit(Stmt stmt, Map<Local, Set<State>> input,
 			Map<Local, Set<State>> output, ControlFlowGraph cfg,
-			Chain<Local> localVariables, Environment environment) throws InvalidAPICallException {
+			Chain<Local> localVariables, Environment environment, DependencyMap dependencyMap) throws InvalidAPICallException {
 		this.input = input;
 		this.output = output;
 		this.cfg = cfg;
 		this.localVariables = localVariables;
 		this.environment = environment;
+		this.dependencyMap = dependencyMap;
 		visit(stmt);
 	}
 
@@ -110,12 +112,10 @@ public class StatementVisitor {
 				if (Configuration.containsAction(method)) {
 					sb.append(" + Action");
 					
-					
 					Object object = stmt.getInvokeExpr().getUseBoxes().get(0);
 					sb.append("got Object " + object);
 					// G.v().out.println(sb.toString());
 					Local rhsL = null;
-					
 					
 					if (object instanceof JimpleLocalBox) {
 						JimpleLocalBox jlBox = (JimpleLocalBox) object;
@@ -142,25 +142,19 @@ public class StatementVisitor {
 						Set<State> inputStates = input.containsKey(lhsL) ? input.get(lhsL) : new HashSet<State>();//input.get(lhsL) : new HashSet<>();
 						inputStates.addAll(outputStates);
 						output.put(lhsL, inputStates);
+						dependencyMap.addDependent(rhsL, lhsL);
+						for(State state : outputStates){
+						    if(Configuration.getBaseState(state).equals(state)){
+						        output = dependencyMap.updateDependentsOf(stmt, lhsL, environment, output);
+						    }
+						    else {
+						        dependencyMap.removeDependent(lhsL);
+						    }
+						}
 					}
 					else {
 						throw new InvalidAPICallException(stmt, inStates, actions);
 					}
-					
-					/*State inState = State.getBottom();
-					if (object instanceof JimpleLocalBox) {
-						JimpleLocalBox jlBox = (JimpleLocalBox) object;
-						Local local = getLocalVariable(jlBox.getValue());
-						inState = Configuration.getHighestState(input.get(local));
-						rhsL = local;
-					}
-					sb.append(" rhsL:" + rhsL);
-					G.v().out.println(sb.toString());
-					TransferFunction tf = new TransferFunction(stmt, inState);
-					Set<State> outputStates = tf.apply(Configuration.getStatesByAction(action), action);
-					Local lhsL = getLocalVariable(stmt.getLeftOp());
-					output.put(lhsL, outputStates);*/
-
 				}
 			}
 		} else {
@@ -176,12 +170,6 @@ public class StatementVisitor {
 			} else if (input.containsKey(rhs)) {
 				Local lhs = getLocalVariable(stmt.getLeftOp());
 				sb.append(":exists");
-				/*
-				 * State inState =
-				 * Configuration.getHighestState(input.get(lhs));
-				 * TransferFunction tf = new TransferFunction(stmt, inState);
-				 * Set<State> outStates = tf.apply(input.get(rhs), null);
-				 */
 				output.put(lhs, input.get(rhs));
 			}
 		}
@@ -217,6 +205,13 @@ public class StatementVisitor {
 					Set<State> inputStates = input.containsKey(local)? input.get(local) : new HashSet<State>();
 					inputStates.addAll(outputStates);
 					output.put(local, inputStates);
+
+                    for(State state : outputStates){
+                        if(Configuration.isBaseState(state)){
+                            G.v().out.println("is base state " + state);
+                            output = dependencyMap.updateDependentsOf(stmt, local, environment, output);
+                        }
+                    }
 				}
 				else {
 					throw new InvalidAPICallException(stmt, inStates, actions);

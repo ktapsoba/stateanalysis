@@ -18,6 +18,7 @@ public class Configuration {
 	private static Map<String, State> statesByName = new HashMap<>();
 	private static Map<String, Transition> transitionsByName = new HashMap<>();
 	private static Map<Method, Action> actionsByMethod = new HashMap<>();
+	private static Map<State, State> baseStateByState = new HashMap<>();
 
 	public static void addNewMethod(String className, String methodName) {
 		if (className.isEmpty() || methodName.isEmpty())
@@ -59,6 +60,12 @@ public class Configuration {
 			statesByName.put(stateName, state);
 		}
 	}
+	
+	public static void addBaseState(String stateName, String baseStateName) {
+	    State state = statesByName.get(stateName);
+	    State baseState = statesByName.get(baseStateName);
+	    baseStateByState.put(state, baseState);
+	}
 
 	public static void addNewTransition(String name, String inStateName,
 			String outStateName, String actionName) {
@@ -88,6 +95,10 @@ public class Configuration {
 			}
 		}
 		return false;
+	}
+	
+	public static boolean isBaseState(State state){
+	    return baseStateByState.values().contains(state);
 	}
 	
 	private static boolean containsTransition(State inState, State outState, Action action){
@@ -124,6 +135,10 @@ public class Configuration {
 			}
 		}
 		return states;
+	}
+	
+	public static State getBaseState(State state) {
+	    return baseStateByState.get(state);
 	}
 
 	/*public static State getHighestState(Set<State> states) {

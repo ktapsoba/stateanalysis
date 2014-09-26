@@ -2,10 +2,8 @@ package programAnalysis;
 
 import java.util.Map;
 
-import resource.Method;
 import soot.Body;
 import soot.BodyTransformer;
-import soot.G;
 import soot.PackManager;
 import soot.Transform;
 import soot.toolkits.graph.ExceptionalUnitGraph;
@@ -53,7 +51,7 @@ public class Analysis extends BodyTransformer {
 			cfg = new ControlFlowGraph();
 		}
 		UnitGraph unitGraph = new ExceptionalUnitGraph(body);
-		DataFlowAnalysis dataFlowAnalysis = new DataFlowAnalysis(unitGraph, null, body.getLocals(), cfg, new Environment());
+		DataFlowAnalysis dataFlowAnalysis = new DataFlowAnalysis(unitGraph, null, body.getLocals(), cfg, new Environment(), new DependencyMap());
 		dataFlowAnalysis.startAnalysis();
 	}
 
@@ -114,6 +112,14 @@ public class Analysis extends BodyTransformer {
 		/**ResultSet**/
         Configuration.addNewState("ResultSetClosed");
         Configuration.addActionToState("ResultSetClosed", Configuration.getAction("closeResultSet"));
+        
+        //Set up base states
+        Configuration.addBaseState("NotConnected", "NotConnected");
+        Configuration.addBaseState("Connected", "NotConnected");
+        Configuration.addBaseState("Statement", "StatementClosed");
+        Configuration.addBaseState("StatementClosed", "StatementClosed");
+        Configuration.addBaseState("ResultSet", "ResultSetClosed");
+        Configuration.addBaseState("ResultSetClosed", "ResultSetClosed");
 		
 		// Set up Transitions
 		Configuration.addNewTransition("toConnected1", "NotConnected", "Connected", "getConnection");
