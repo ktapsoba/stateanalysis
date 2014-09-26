@@ -2,6 +2,7 @@ package programAnalysis;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,7 @@ import resource.Method;
 import resource.State;
 import soot.G;
 import soot.Local;
+import soot.Unit;
 import soot.Value;
 import soot.jimple.AssignStmt;
 import soot.jimple.GotoStmt;
@@ -27,6 +29,7 @@ import soot.jimple.ReturnVoidStmt;
 import soot.jimple.Stmt;
 import soot.jimple.TableSwitchStmt;
 import soot.jimple.internal.JimpleLocalBox;
+import soot.toolkits.graph.DirectedGraph;
 import soot.util.Chain;
 import soot.util.Heap;
 import verification.Configuration;
@@ -41,6 +44,7 @@ public class StatementVisitor {
 	Heap heap;
 	Environment environment;
 	DependencyMap dependencyMap;
+    Map<Local, Set<State>> RET_State;
 
 	public StatementVisitor() {
 	}
@@ -104,6 +108,7 @@ public class StatementVisitor {
 		sb.append(stmt);
 		if (cfg.isBranchStmt(stmt)) {
 			sb.append(" --->Branching");
+			processBranchStmt(stmt);
 		} else if (cfg.isCallStmt(stmt)) {
 			sb.append(" --->calling");
 			Method method = cfg.getMethod(stmt);
@@ -182,6 +187,7 @@ public class StatementVisitor {
 		sb.append(stmt);
 		if (cfg.isBranchStmt(stmt)) {
 			sb.append(" --->Branching");
+			processBranchStmt(stmt);
 		} else if (cfg.isCallStmt(stmt)) {
 			sb.append(" --->Calling");
 			Method method = cfg.getMethod(stmt);
@@ -253,11 +259,14 @@ public class StatementVisitor {
 	}
 
 	private void visit(RetStmt stmt) {
-
 	}
 
 	private void visit(ReturnVoidStmt stmt) {
-
+	    RET_State = output;
+	}
+	
+	public Map<Local, Set<State>> getReturnStates() {
+	    return RET_State;
 	}
 
 	private Local getLocalVariable(Value value) {
@@ -286,4 +295,59 @@ public class StatementVisitor {
 		}
 		return states;
 	}
+	
+	private void processBranchStmt(Stmt stmt){
+	    G.v().out.println("*****************BRANCH START****************");
+	    List<Value> args = cfg.getArguments(stmt);
+	    List<Local> parameters = cfg.getParameters(stmt);
+	    Map<Local, Set<State>> newInput = getInputToPass(args, parameters);
+	    DirectedGraph<Unit> newGraph = cfg.makeGraph(stmt);
+	    Chain<Local> newLocals = cfg.getLocals(stmt);
+	    DataFlowAnalysis dataFlowAnalysis = new DataFlowAnalysis(newGraph, newInput, newLocals, cfg, environment, dependencyMap);
+	    dataFlowAnalysis.startAnalysis();
+	    Map<Local, Set<State>> newOutput = dataFlowAnalysis.getReturnStates();
+	    Map<Local, Set<State>> outputStates = getOutputFromCall(newOutput, args, parameters);
+	    for(Local local : outputStates.keySet()){
+	        output.put(local, outputStates.get(local));
+	    }
+	    G.v().out.println("*****************BRANCH DONE****************");
+	}
+	
+	private Map<Local, Set<State>> getInputToPass(List<Value> arguments, List<Local> parameters){
+	    Map<Local, Set<State>> newInput = new HashMap<>();
+	    Map<Integer, Local> parametersName = new HashMap<>();
+	    Integer pos = 0;
+	    for(Local local : parameters){
+	        parametersName.put(pos, local);
+	        pos++;
+	    }
+	    pos = 0;
+	    for(Value value : arguments) {
+	        Local local = getLocalVariable(value);
+	        if(local != null && input.containsKey(local)){
+	            newInput.put(parametersName.get(pos), input.get(local));
+	            pos++;
+	        }
+	    }
+	    return newInput;
+	}
+	
+	public Map<Local, Set<State>> getOutputFromCall(Map<Local, Set<State>> newOutput, List<Value> arguments, List<Local> parameters){
+	    Map<Local, Set<State>> toAddorUpdate = new HashMap();
+        Map<String, Local> argumentsByName = new HashMap<>();
+        for(Value value : arguments){
+            Local local = getLocalVariable(value);
+            if(local != null){
+                argumentsByName.put(local.getName(), local);
+            }
+        }
+        //G.v().out.println("Agrs Map " + argumentsByName);
+        for(Local local : parameters){
+            if (newOutput.containsKey(local)){
+                toAddorUpdate.put(argumentsByName.get(local.getName()), newOutput.get(local));
+            }
+        }
+        return toAddorUpdate;
+	}
+	
 }

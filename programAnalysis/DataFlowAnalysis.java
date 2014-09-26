@@ -128,4 +128,8 @@ public class DataFlowAnalysis extends
 		}
 		unitByState.put(unit, newState);
 	}
+	
+	public Map<Local, Set<State>> getReturnStates(){
+	    return newVisitor.getReturnStates();
+	}
 }
