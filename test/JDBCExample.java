@@ -45,7 +45,7 @@ public class JDBCExample {
 			stmt = conn.createStatement();
 			//conn = DriverManager.getConnection(url, "root", "root");
 			//conn = DriverManager.getConnection(DB_URL,USER,PASS);//.close();
-			conn.close();
+			//conn.close();
 			System.out.println("getting result");
 
 			
@@ -65,6 +65,9 @@ public class JDBCExample {
 		       printResults(code, name, population, con2);
 		       printResults(code, name, population, conn);
 			}
+			
+			conn.close();
+			rs = stmt.executeQuery(sql);
 			
 		    //STEP 6: Clean-up environment
 			System.out.println("close conn");

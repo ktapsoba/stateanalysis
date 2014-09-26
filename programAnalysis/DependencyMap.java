@@ -39,7 +39,7 @@ public class DependencyMap {
     
     public boolean hasDependents(Local variable) {
         if(dependentsByLocal.containsKey(variable)){
-            return dependentsByLocal.get(variable).isEmpty();
+            return !dependentsByLocal.get(variable).isEmpty();
         }
         return false;
     }
