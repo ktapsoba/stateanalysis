@@ -29,6 +29,8 @@ public class JDBCExample {
 		Statement stmt = one;
 		Connection con2 = null;
 		
+		JavaIOExample some = new JavaIOExample();
+		some.Do();
 		try{
 			//STEP 2: Register JDBC driver
 			Class.forName(JDBC_DRIVER);
@@ -40,9 +42,9 @@ public class JDBCExample {
 			//conn.close();
 			//STEP 4: Execute a query
 			System.out.println("Creating statement...");
-			con2 = DriverManager.getConnection(DB_URL);
-			String sql = "SELECT * from country";
 			stmt = conn.createStatement();
+			//con2 = DriverManager.getConnection(DB_URL);
+			String sql = "SELECT * from country";
 			//conn = DriverManager.getConnection(url, "root", "root");
 			//conn = DriverManager.getConnection(DB_URL,USER,PASS);//.close();
 			//conn.close();

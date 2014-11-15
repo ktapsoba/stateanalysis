@@ -5,7 +5,6 @@ import java.util.Set;
 
 import resource.Action;
 import resource.State;
-import soot.G;
 import soot.jimple.Stmt;
 
 public class TransferFunction {

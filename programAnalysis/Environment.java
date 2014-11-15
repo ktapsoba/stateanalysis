@@ -37,6 +37,10 @@ public class Environment {
 		//G.v().out.println(this);
 	}
 	
+	public void addStmtState(Stmt stmt, Map<Local, Set<State>> states){
+		this.localStatesByStmt.put(stmt, states);
+	}
+	
 	public void addSuccessor(Stmt stmt, Stmt successor) {
 		if(localStatesByStmt.containsKey(stmt))
 			localStatesByStmt.put(successor, localStatesByStmt.get(stmt));

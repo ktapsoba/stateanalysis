@@ -5,6 +5,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Handler;
+import java.util.logging.Logger;
 
 import resource.State;
 import soot.G;
@@ -28,9 +30,10 @@ public class DataFlowAnalysis extends
 	private Map<Unit, Map<Local, Set<State>>> stateByUnitOut;
 	private Environment environment;
 	private DependencyMap dependencyMap;
+	private Logger logger;
 
 	public DataFlowAnalysis(DirectedGraph<Unit> graph, Map<Local, Set<State>> extremalValue, Chain<Local> localVariables,
-			ControlFlowGraph cfg, Environment environment, DependencyMap dependencyMap) {
+			ControlFlowGraph cfg, Environment environment, DependencyMap dependencyMap, Logger logger) {
 		super(graph);
 		this.graph = graph;
 		this.unitGraph = (UnitGraph) graph;
@@ -42,19 +45,27 @@ public class DataFlowAnalysis extends
 		this.stateByUnitOut = new HashMap<>();
 		this.environment = environment;
 		this.dependencyMap = dependencyMap;
+		this.logger = logger;
 	}
 
 	public void startAnalysis() {
 		try{
+			/*for(Unit head : unitGraph.getHeads()){
+				Stmt stmt = (Stmt)head;
+				environment.addStmtState(stmt, extremalValue);
+			}*/
 			doAnalysis();
-			G.v().out.println("No errors found in analysis using entry point "
+			logger.info("No errors found in analysis using entry point "
 					+ unitGraph.getBody().getMethod().toString());
 		} catch (InvalidAPICallException ex){
-			G.v().out.println("*****Errors Found!!!");
-			G.v().out.println(ex.toString());
+			logger.info("*****Errors Found!!!");
+			logger.info(ex.toString());
+			System.exit(1);
 		} catch(Exception ex) {
-			G.v().out.println("Unexpected Exception found!!!!");
-			G.v().out.println(ex.getMessage());
+			logger.info("Unexpected Exception found!!!!");
+			logger.info(ex.getMessage());
+			ex.printStackTrace(G.v().out);
+			System.exit(1);
 		}
 	}
 
@@ -72,19 +83,18 @@ public class DataFlowAnalysis extends
 	protected void flowThrough(Map<Local, Set<State>> input, Unit unit,
 			Map<Local, Set<State>> output) throws InvalidAPICallException{
 
-		G.v().out.println("INPUT--> " + input);
+		logger.info("INPUT--> " + input);
 		saveStateByUnit(unit, input, stateByUnitIn);
 		copy(input, output);
-		//G.v().out.println("unit-->" + unit);
+		logger.info("unit-->" + unit);
 		Stmt stmt = (Stmt) unit;
-		newVisitor.visit(stmt, input, output, cfg, localVariables, environment, dependencyMap);
+		newVisitor.visit(stmt, input, output, cfg, localVariables, environment, dependencyMap, logger);
 		List<Unit> successors = unitGraph.getSuccsOf(unit);
 		for(Unit succ : successors){
 			Stmt succStmt = (Stmt) succ;
 			environment.addSuccessor(stmt, succStmt);
 		}
 		saveStateByUnit(unit, output, stateByUnitOut);
-		G.v().out.println("OUTPUT--> " + output);
 	}
 
 	@Override
@@ -115,7 +125,7 @@ public class DataFlowAnalysis extends
 			} else if (input2.containsKey(key)) {
 				output.put(key, input2.get(key));
 			} else {
-				G.v().out.println("THIS IS IMPOSSIBLE");
+				logger.info("THIS IS IMPOSSIBLE");
 			}
 		}
 	}

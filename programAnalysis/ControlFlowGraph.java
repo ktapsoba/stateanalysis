@@ -8,11 +8,15 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Handler;
+import java.util.logging.Logger;
 
 import resource.Method;
+import soot.ArrayType;
 import soot.Body;
 import soot.G;
 import soot.Local;
+import soot.RefType;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootField;
@@ -20,6 +24,7 @@ import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.InvokeExpr;
+import soot.jimple.Jimple;
 import soot.jimple.Stmt;
 import soot.jimple.toolkits.callgraph.CallGraph;
 import soot.jimple.toolkits.callgraph.Edge;
@@ -36,6 +41,7 @@ public class ControlFlowGraph{
 	private final CallGraph callGraph;
 	private final Map<Method, Body> methodToBody = new HashMap<>();
 	private final Map<String, Set<SootField>>applicationClasses  = new HashMap<>();
+	private Logger logger = Logger.getLogger(ControlFlowGraph.class.getName());
 	
 	//retains only callers that are explicit call sites or Thread.start()
 	protected static class EdgeFilter extends Filter {		
@@ -49,7 +55,8 @@ public class ControlFlowGraph{
 	}
 
 	// being used
-	public ControlFlowGraph() {
+	public ControlFlowGraph(Handler handler) {
+		logger.addHandler(handler);
 		callGraph = Scene.v().getCallGraph();
 		Chain<SootClass> appClasses = Scene.v().getApplicationClasses();
 		
@@ -67,7 +74,7 @@ public class ControlFlowGraph{
 		
 		for(SootClass sootClass : appClasses){
 			for(SootMethod sootMethod : sootClass.getMethods()){
-				G.v().out.println("class fields " + sootMethod.toString());
+				logger.info("class fields " + sootMethod.toString());
 				if (sootMethod.hasActiveBody()){
 					Body body = sootMethod.getActiveBody();
 					Method method = toMethod(sootMethod);
@@ -124,7 +131,14 @@ public class ControlFlowGraph{
 		List<Local> parameters = new ArrayList<>();
 		Body body = getActiveBody(stmt);
 		for(int i = 0; i<getArguments(stmt).size(); i++){
-			parameters.add(body.getParameterLocal(i));
+			try{
+				Local local = body.getParameterLocal(i);
+				parameters.add(local);
+			} catch(Exception e){
+				Value value = getArguments(stmt).get(i);
+				String name = value.toString();
+				Local local = Jimple.v().newLocal(name, ArrayType.v(RefType.v("java.lang.String"), 1));
+			}
 		}
 		return parameters;
 	}

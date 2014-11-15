@@ -7,12 +7,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Handler;
+import java.util.logging.Logger;
 
 import resource.Action;
 import resource.Method;
 import resource.State;
+import soot.ArrayType;
 import soot.G;
 import soot.Local;
+import soot.RefType;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.AssignStmt;
@@ -20,6 +24,7 @@ import soot.jimple.GotoStmt;
 import soot.jimple.IdentityStmt;
 import soot.jimple.IfStmt;
 import soot.jimple.InvokeStmt;
+import soot.jimple.Jimple;
 import soot.jimple.LookupSwitchStmt;
 import soot.jimple.NewExpr;
 import soot.jimple.NopStmt;
@@ -38,27 +43,31 @@ import verification.TransferFunction;
 
 public class StatementVisitor {
 	private Map<Local, Set<State>> input, output;
-	private Configuration config;
 	ControlFlowGraph cfg;
 	Chain<Local> localVariables;
 	Heap heap;
 	Environment environment;
 	DependencyMap dependencyMap;
+	Logger logger;
     Map<Local, Set<State>> RET_State;
+    Set<State> RETURNED_STATES;
+    Local RET = Jimple.v().newLocal("RET", ArrayType.v(RefType.v("java.lang.String"), 1));
 
 	public StatementVisitor() {
 	}
 
 	public void visit(Stmt stmt, Map<Local, Set<State>> input,
 			Map<Local, Set<State>> output, ControlFlowGraph cfg,
-			Chain<Local> localVariables, Environment environment, DependencyMap dependencyMap) throws InvalidAPICallException {
+			Chain<Local> localVariables, Environment environment, DependencyMap dependencyMap, Logger logger) throws InvalidAPICallException {
 		this.input = input;
 		this.output = output;
 		this.cfg = cfg;
 		this.localVariables = localVariables;
 		this.environment = environment;
 		this.dependencyMap = dependencyMap;
+		this.logger = logger;
 		visit(stmt);
+		
 	}
 
 	private void visit(Stmt stmt) throws InvalidAPICallException {
@@ -86,14 +95,14 @@ public class StatementVisitor {
 			visit((ReturnVoidStmt) stmt);
 		} else {
 			// throw new Exception("Cannot identiy Statement " + stmt);
-			G.v().out.println("cannot identify statement " + stmt);
+			logger.fine("cannot identify statement " + stmt);
 		}
 	}
 
 	private void visit(IdentityStmt stmt) {
 		// x ::= @parameter1: type
 		// use when arguments are passed to a method
-		Value value = stmt.getLeftOp();
+		//Value value = stmt.getLeftOp();
 
 		// G.v().out.println("Identity Stmt--> " + stmt + " local--> " +
 		// getLocalVariable(value) + " type--> " + value.getType());
@@ -109,6 +118,12 @@ public class StatementVisitor {
 		if (cfg.isBranchStmt(stmt)) {
 			sb.append(" --->Branching");
 			processBranchStmt(stmt);
+			if(output.containsKey(RET)){
+				Local lhs = getLocalVariable(stmt.getLeftOp());
+				output.put(lhs, output.get(RET));
+				environment.updateLocal(stmt, lhs, input.get(RET));
+				output.remove(RET);
+			}
 		} else if (cfg.isCallStmt(stmt)) {
 			sb.append(" --->calling");
 			Method method = cfg.getMethod(stmt);
@@ -116,10 +131,8 @@ public class StatementVisitor {
 				sb.append(":contains Method " + method.toString());
 				if (Configuration.containsAction(method)) {
 					sb.append(" + Action");
-					
 					Object object = stmt.getInvokeExpr().getUseBoxes().get(0);
 					sb.append("got Object " + object);
-					// G.v().out.println(sb.toString());
 					Local rhsL = null;
 					
 					if (object instanceof JimpleLocalBox) {
@@ -131,20 +144,21 @@ public class StatementVisitor {
 					//get actions
 					List<Action> actions = Configuration.getActions(method);
 					sb.append(" :" + actions);
-					//G.v().out.println(sb.toString());
+					
 					//get inStates
 					List<State> inStates = input.containsKey(rhsL)? environment.getStates(stmt, rhsL) : Arrays.asList(State.getBottom());
-					
+
 					//create transfer functions
 					List<TransferFunction> transferFunctions = createTransferFunctions(stmt, inStates);
-					
+
 					//Apply Transfer Functions
 					Set<State> outputStates = applyTransferFunctions(actions, transferFunctions);
-					
+
 					if(outputStates.size() > 0){
 						Local lhsL = getLocalVariable(stmt.getLeftOp());
 						environment.updateLocal(stmt, lhsL, outputStates);
 						Set<State> inputStates = input.containsKey(lhsL) ? input.get(lhsL) : new HashSet<State>();//input.get(lhsL) : new HashSet<>();
+						
 						inputStates.addAll(outputStates);
 						output.put(lhsL, inputStates);
 						dependencyMap.addDependent(rhsL, lhsL);
@@ -166,19 +180,19 @@ public class StatementVisitor {
 			sb.append(" --->normal");
 			Value rightOperand = stmt.getRightOp();
 			Local rhs = getLocalVariable(rightOperand);
-			G.v().out.println("rhs:" + stmt.getRightOp());
 			if (rightOperand instanceof NewExpr) {
-				G.v().out.println("declaration " + rightOperand.getType());
+				/*G.v().out.println("declaration " + rightOperand.getType());
 				if (cfg.isApplicationClass(rightOperand.getType().toString())) {
 					G.v().out.println("put in heap");
-				}
+				}*/
 			} else if (input.containsKey(rhs)) {
 				Local lhs = getLocalVariable(stmt.getLeftOp());
 				sb.append(":exists");
 				output.put(lhs, input.get(rhs));
+				environment.updateLocal(stmt, lhs, input.get(rhs));
 			}
 		}
-		G.v().out.println(sb.toString());
+		//G.v().out.println(sb.toString());
 	}
 
 	private void visit(InvokeStmt stmt) throws InvalidAPICallException {
@@ -214,7 +228,6 @@ public class StatementVisitor {
 
                     for(State state : outputStates){
                         if(Configuration.isBaseState(state)){
-                            G.v().out.println("is base state " + state);
                             output = dependencyMap.updateDependentsOf(stmt, local, environment, output);
                         }
                     }
@@ -222,16 +235,11 @@ public class StatementVisitor {
 				else {
 					throw new InvalidAPICallException(stmt, inStates, actions);
 				}
-				
-				/*State inState = Configuration.getHighestState(input.get(local));
-				TransferFunction tf = new TransferFunction(stmt, inState);
-				Set<State> outputStates = tf.apply(Configuration.getStatesByAction(action), action);
-				output.put(local, outputStates);*/
 			}
 		} else {
 			sb.append(" --->Normal");
 		}
-		G.v().out.println(sb.toString());
+		//G.v().out.println(sb.toString());
 	}
 
 	private void visit(IfStmt stmt) {
@@ -239,7 +247,7 @@ public class StatementVisitor {
 	}
 
 	private void visit(GotoStmt stmt) {
-
+		
 	}
 
 	private void visit(TableSwitchStmt stmt) {
@@ -255,10 +263,17 @@ public class StatementVisitor {
 	}
 
 	private void visit(ReturnStmt stmt) {
-
+		Value value = stmt.getOp();
+		Local local = getLocalVariable(value);
+		if(input.containsKey(local)){
+			output.put(RET, input.get(local));
+		}
+		RET_State = output;
 	}
 
 	private void visit(RetStmt stmt) {
+		G.v().out.println("ret statment " + stmt.toString());
+		RET_State = output;
 	}
 
 	private void visit(ReturnVoidStmt stmt) {
@@ -297,20 +312,23 @@ public class StatementVisitor {
 	}
 	
 	private void processBranchStmt(Stmt stmt){
-	    G.v().out.println("*****************BRANCH START****************");
+		logger.info("*****************BRANCH START****************");
 	    List<Value> args = cfg.getArguments(stmt);
 	    List<Local> parameters = cfg.getParameters(stmt);
 	    Map<Local, Set<State>> newInput = getInputToPass(args, parameters);
 	    DirectedGraph<Unit> newGraph = cfg.makeGraph(stmt);
 	    Chain<Local> newLocals = cfg.getLocals(stmt);
-	    DataFlowAnalysis dataFlowAnalysis = new DataFlowAnalysis(newGraph, newInput, newLocals, cfg, environment, dependencyMap);
+	    for(Unit unit : newGraph.getHeads()){
+	    	environment.addStmtState((Stmt)unit, newInput);
+	    }
+	    DataFlowAnalysis dataFlowAnalysis = new DataFlowAnalysis(newGraph, newInput, newLocals, cfg, environment, dependencyMap, logger);
 	    dataFlowAnalysis.startAnalysis();
 	    Map<Local, Set<State>> newOutput = dataFlowAnalysis.getReturnStates();
 	    Map<Local, Set<State>> outputStates = getOutputFromCall(newOutput, args, parameters);
 	    for(Local local : outputStates.keySet()){
 	        output.put(local, outputStates.get(local));
 	    }
-	    G.v().out.println("*****************BRANCH DONE****************");
+	    logger.info("*****************BRANCH DONE****************");
 	}
 	
 	private Map<Local, Set<State>> getInputToPass(List<Value> arguments, List<Local> parameters){
@@ -333,7 +351,7 @@ public class StatementVisitor {
 	}
 	
 	public Map<Local, Set<State>> getOutputFromCall(Map<Local, Set<State>> newOutput, List<Value> arguments, List<Local> parameters){
-	    Map<Local, Set<State>> toAddorUpdate = new HashMap();
+	    Map<Local, Set<State>> toAddorUpdate = new HashMap<>();
         Map<String, Local> argumentsByName = new HashMap<>();
         for(Value value : arguments){
             Local local = getLocalVariable(value);
@@ -341,11 +359,15 @@ public class StatementVisitor {
                 argumentsByName.put(local.getName(), local);
             }
         }
-        //G.v().out.println("Agrs Map " + argumentsByName);
+
         for(Local local : parameters){
             if (newOutput.containsKey(local)){
                 toAddorUpdate.put(argumentsByName.get(local.getName()), newOutput.get(local));
             }
+        }
+        
+        if(newOutput.containsKey(RET)){
+        	toAddorUpdate.put(RET, newOutput.get(RET));
         }
         return toAddorUpdate;
 	}
